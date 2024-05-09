@@ -3,6 +3,8 @@ import csv
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QCheckBox, QVBoxLayout
 from PyQt5.QtCore import QThread
+from PyQt5.QtWidgets import QProgressBar
+from PyQt5.QtCore import pyqtSignal
 import numpy as np
 import argparse
 import os
@@ -12,6 +14,8 @@ import time
 from datetime import datetime
 
 class Worker(QThread):
+    progress_signal = pyqtSignal(int)
+
     def __init__(self, callable, *args, **kwargs):
         super().__init__()
         self.callable = callable
@@ -60,6 +64,9 @@ class ActigraphyProcessorApp(QWidget):
         self.start_button = QPushButton("Start Actigraphy")
         self.start_button.clicked.connect(self.start_actigraphy)
 
+        self.progress_bar = QProgressBar(self)
+
+        layout.addWidget(self.progress_bar)
         layout.addWidget(self.video_file_label)
         layout.addWidget(self.video_file_edit)
         layout.addWidget(self.video_file_button)
@@ -121,19 +128,30 @@ class ActigraphyProcessorApp(QWidget):
 
         # Check if a single video file or video directory has been specified
         if video_file:
-            # We will create a worker thread to run our process in the background
             self.worker = Worker(self.actigraphy_processor.process_single_video_file,
-                             video_file, name_stamp, set_roi)
-            self.worker.finished.connect(self.on_processing_finished)  # Connect a signal when processing is done
+                                 video_file, name_stamp, set_roi)
+            # Now correctly pass the progress_callback as an argument to process_single_video_file
+            self.worker.kwargs['progress_callback'] = self.worker.progress_signal
+            # Connect signals
+            self.worker.progress_signal.connect(self.update_progress_bar)
+            self.worker.finished.connect(self.on_processing_finished)
             self.worker.start()
         elif video_folder:
+            # Create a worker thread for processing the entire directory
             self.worker = Worker(self.actigraphy_processor.process_video_files,
-                             video_folder, oaf, set_roi, name_stamp)
+                         video_folder, oaf, set_roi, name_stamp)
+    
+            # Connect signals for the worker
+            self.worker.progress_signal.connect(self.update_progress_bar)
             self.worker.finished.connect(self.on_processing_finished)
+
             self.worker.start()
         else:
             print("No video file or folder has been selected.")
-            self.start_button.setEnabled(True)  # Re-enable start button if no process was started
+            self.start_button.setEnabled(True)
+        
+    def update_progress_bar(self, value):
+        self.progress_bar.setValue(value)
 
     def on_processing_finished(self):
         print("Actigraphy processing has been completed.")
@@ -186,7 +204,7 @@ class ActigraphyProcessor:
         
         return mp4_files
 
-    def process_single_video_file(self, video_file, name_stamp, set_roi, roi_pts=None):
+    def process_single_video_file(self, video_file, name_stamp, set_roi, roi_pts=None, progress_callback=None):
         print("\nProcessing video file: {}.".format(video_file))
         
         
@@ -218,6 +236,9 @@ class ActigraphyProcessor:
         
             print('Actigraphy Started')
             writer.writerow([1, 0, 0, 0, 0, creation_time])
+
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
             while True:
                 ret, frame = cap.read()
                 if not ret:
@@ -237,6 +258,10 @@ class ActigraphyProcessor:
                     writer.writerow([frame_number, elapsed_millis, raw_diff, rmse, selected_pixel_diff, posix_time])
 
                 prev_frame = frame
+
+                if progress_callback and frame_number % 100 == 0:  # For example, if you want to update every 100 frames
+                    progress = (frame_number / total_frames) * 100
+                    progress_callback.emit(int(progress))
             cap.release()
             print("Actigraphy processing completed for {}".format(video_file))
             print("*" * 75)
