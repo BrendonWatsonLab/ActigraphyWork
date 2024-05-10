@@ -137,14 +137,16 @@ class ActigraphyProcessorApp(QWidget):
             self.worker.finished.connect(self.on_processing_finished)
             self.worker.start()
         elif video_folder:
-            # Create a worker thread for processing the entire directory
-            self.worker = Worker(self.actigraphy_processor.process_video_files,
-                         video_folder, oaf, set_roi, name_stamp)
-    
-            # Connect signals for the worker
+            # Create the worker for processing the folder
+            self.worker = Worker(
+                self.actigraphy_processor.process_video_files, 
+                video_folder, oaf, set_roi, name_stamp
+            )
+        
+            # Connect the progress signal before starting the worker
+            self.worker.kwargs['progress_callback'] = self.worker.progress_signal
             self.worker.progress_signal.connect(self.update_progress_bar)
             self.worker.finished.connect(self.on_processing_finished)
-
             self.worker.start()
         else:
             print("No video file or folder has been selected.")
@@ -205,9 +207,6 @@ class ActigraphyProcessor:
         return mp4_files
 
     def process_single_video_file(self, video_file, name_stamp, set_roi, roi_pts=None, progress_callback=None):
-        print("\nProcessing video file: {}.".format(video_file))
-        
-        
         # Determine whether to use creation time from the file name or os.path.getctime
         if name_stamp or name_stamp is None:
             print("Extracting creation time from the name.")
@@ -234,7 +233,7 @@ class ActigraphyProcessor:
                 print("Please select the region of interest (ROI) in the first frame.")
                 self.roi_pts = self._select_roi_from_first_frame(cap)
         
-            print('Actigraphy Started')
+            print(f"\nProcessing video file: {video_file}")
             writer.writerow([1, 0, 0, 0, 0, creation_time])
 
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -263,34 +262,36 @@ class ActigraphyProcessor:
                     progress = (frame_number / total_frames) * 100
                     progress_callback.emit(int(progress))
             cap.release()
-            print("Actigraphy processing completed for {}".format(video_file))
+            print(f"Actigraphy processing completed for {video_file}")
             print("*" * 75)
 
-    def process_video_files(self, video_folder, oaf, set_roi, name_stamp):
+    def process_video_files(self, video_folder, oaf, set_roi, name_stamp, progress_callback=None):
         nested_folders = self.get_nested_paths(video_folder)
-        for folder in nested_folders:
-            if folder[-1] != '/':
-                folder = folder + '/'
+        all_mp4_files = [
+            os.path.join(folder, mp4_file)
+            for folder in nested_folders
+            for mp4_file in self.list_mp4_files(folder, oaf)
+        ]
+        total_files = len(all_mp4_files)
+        files_processed = 0
 
-            mp4_files = self.list_mp4_files(folder,oaf)
-            if mp4_files:
-                print("Starting Actigraphy In the folder: {}:".format(folder))
-            else:
-                print("Skipping the folder {}.".format(folder))
-                continue
-
-            # Initialize roi_pts to None for the first video in the list
+        for mp4_file in all_mp4_files:
+            # Process the single video file
+            self.process_single_video_file(mp4_file, name_stamp, set_roi, self.roi_pts)
             
+            # Increment the number of processed files
+            files_processed += 1
 
-            for mp4_file in mp4_files:
-                
-                self.process_single_video_file(os.path.join(folder, mp4_file), name_stamp, set_roi, self.roi_pts)
-                
-                # Set roi_pts to the points selected in the first video for subsequent videos
-                if set_roi and self.roi_pts is None:
-                    roi_pts = self._select_roi_from_first_frame(
-                        cv2.VideoCapture(os.path.join(folder, mp4_file))
-                    )
+            # Emit the updated cumulative progress for the entire folder
+            if progress_callback:
+                folder_progress = int((files_processed / total_files) * 100)
+                progress_callback.emit(folder_progress)
+
+            # Initialize roi_pts to None for the first video in the list, or retain previously set ROI
+            if set_roi and not self.roi_pts:
+                cap = cv2.VideoCapture(mp4_file)
+                self.roi_pts = self._select_roi_from_first_frame(cap)
+                cap.release()  # Make sure to release the capture object
 
     def _select_roi_from_first_frame(self, cap):
         # Open the first frame for user to select ROI points
