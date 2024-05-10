@@ -9,6 +9,7 @@ import datetime
 import time
 from datetime import datetime
 
+# FYI only done for tkinter not PyQt5
 
 class ActigraphyProcessor:
     def __init__(self):
