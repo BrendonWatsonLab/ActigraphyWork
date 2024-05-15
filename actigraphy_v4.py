@@ -29,6 +29,9 @@ class ActigraphyProcessorApp(QWidget):
     def __init__(self, actigraphy_processor):
         super().__init__()
         self.actigraphy_processor = actigraphy_processor
+        self.settings_most_movement = {'global_threshold': '10', 'percentage_threshold': '20', 'min_size_threshold': '100', 'dilation_kernel': '3'}
+        self.settings_medium_movement = {'global_threshold': '15', 'percentage_threshold': '25', 'min_size_threshold': '120', 'dilation_kernel': '4'}
+        self.settings_only_large_movement = {'global_threshold': '20', 'percentage_threshold': '30', 'min_size_threshold': '140', 'dilation_kernel': '5'}
         self.init_ui()
 
     def init_ui(self):
@@ -66,6 +69,17 @@ class ActigraphyProcessorApp(QWidget):
 
         self.progress_bar = QProgressBar(self)
 
+        self.btn_most_movement = QPushButton("Most Movement")
+        self.btn_medium_movement = QPushButton("Medium Movement")
+        self.btn_only_large_movement = QPushButton("Only Large Movement")
+
+        self.btn_most_movement.clicked.connect(lambda: self.set_defaults(self.settings_most_movement))
+        self.btn_medium_movement.clicked.connect(lambda: self.set_defaults(self.settings_medium_movement))
+        self.btn_only_large_movement.clicked.connect(lambda: self.set_defaults(self.settings_only_large_movement))
+
+        layout.addWidget(self.btn_most_movement)
+        layout.addWidget(self.btn_medium_movement)
+        layout.addWidget(self.btn_only_large_movement)
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.video_file_label)
         layout.addWidget(self.video_file_edit)
@@ -88,6 +102,13 @@ class ActigraphyProcessorApp(QWidget):
 
         self.setLayout(layout)
         self.setWindowTitle('Actigraphy')
+
+    def set_defaults(self, settings):
+        # Update line edits with default values
+        self.global_threshold_edit.setText(settings['global_threshold'])
+        self.percentage_threshold_edit.setText(settings['percentage_threshold'])
+        self.min_size_threshold_edit.setText(settings['min_size_threshold'])
+        self.dilation_kernel_edit.setText(settings['dilation_kernel'])
 
     def browse_video_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, 'Open Video File', '', 'MP4 files (*.mp4)')
