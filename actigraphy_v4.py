@@ -28,6 +28,7 @@ class Worker(QThread):
 class ActigraphyProcessorApp(QWidget):
     def __init__(self, actigraphy_processor):
         super().__init__()
+        # can edit three default settings for buttons
         self.actigraphy_processor = actigraphy_processor
         self.settings_most_movement = {'global_threshold': '10', 'percentage_threshold': '20', 'min_size_threshold': '100', 'dilation_kernel': '3'}
         self.settings_medium_movement = {'global_threshold': '15', 'percentage_threshold': '25', 'min_size_threshold': '120', 'dilation_kernel': '4'}
@@ -36,7 +37,7 @@ class ActigraphyProcessorApp(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout()
-
+        # creating buttons for the GUI layout
         self.video_file_label = QLabel("Video File:")
         self.video_file_edit = QLineEdit()
         self.video_file_button = QPushButton("Browse Files")
@@ -48,16 +49,16 @@ class ActigraphyProcessorApp(QWidget):
         self.video_folder_button.clicked.connect(self.browse_video_folder)
 
         self.min_size_threshold_label = QLabel("Minimum Size Threshold:")
-        self.min_size_threshold_edit = QLineEdit("120")
+        self.min_size_threshold_edit = QLineEdit("0")
 
         self.global_threshold_label = QLabel("Global Threshold:")
-        self.global_threshold_edit = QLineEdit("15")
+        self.global_threshold_edit = QLineEdit("0")
 
         self.percentage_threshold_label = QLabel("Percentage Threshold:")
-        self.percentage_threshold_edit = QLineEdit("25")
+        self.percentage_threshold_edit = QLineEdit("0")
 
         self.dilation_kernel_label = QLabel("Dilation Kernel:")
-        self.dilation_kernel_edit = QLineEdit("4")
+        self.dilation_kernel_edit = QLineEdit("0")
 
         self.oaf_check = QCheckBox("Override Actigraphy Files")
         self.set_roi_check = QCheckBox("Set Region of Interest (ROI)")
@@ -77,6 +78,7 @@ class ActigraphyProcessorApp(QWidget):
         self.btn_medium_movement.clicked.connect(lambda: self.set_defaults(self.settings_medium_movement))
         self.btn_only_large_movement.clicked.connect(lambda: self.set_defaults(self.settings_only_large_movement))
 
+        #formally adds all widgets
         layout.addWidget(self.btn_most_movement)
         layout.addWidget(self.btn_medium_movement)
         layout.addWidget(self.btn_only_large_movement)
