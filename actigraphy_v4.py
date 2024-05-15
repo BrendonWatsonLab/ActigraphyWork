@@ -221,8 +221,11 @@ class ActigraphyProcessor:
         frame_number = 0
 
         # Output CSV file path
+        # can edit file name here
         outputfile_name = os.path.splitext(os.path.basename(video_file))[0] + "_actigraphy.csv"
-        output_file_path = os.path.join(os.path.dirname(video_file), outputfile_name)
+        # can edit file save path here
+        save_directory = os.path.dirname(video_file)
+        output_file_path = os.path.join(save_directory, outputfile_name)
 
         with open(output_file_path, 'w', newline='') as output_file:
             writer = csv.writer(output_file)
@@ -254,11 +257,12 @@ class ActigraphyProcessor:
                     # Calculate Posixtime based on creation time and elapsed time
                     posix_time = int(creation_time + (elapsed_millis))
 
+                    # writes a line of the csv
                     writer.writerow([frame_number, elapsed_millis, raw_diff, rmse, selected_pixel_diff, posix_time])
 
                 prev_frame = frame
 
-                if progress_callback and frame_number % 100 == 0:  # For example, if you want to update every 100 frames
+                if progress_callback and frame_number % 100 == 0:  # Updates every 100 frames for progress bar
                     progress = (frame_number / total_frames) * 100
                     progress_callback.emit(int(progress))
             cap.release()
