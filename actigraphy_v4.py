@@ -79,6 +79,11 @@ class ActigraphyProcessorApp(QWidget):
         self.btn_medium_movement.clicked.connect(lambda: self.set_defaults(self.settings_medium_movement))
         self.btn_only_large_movement.clicked.connect(lambda: self.set_defaults(self.settings_only_large_movement))
 
+        self.output_file_label = QLabel("Output CSV File:")
+        self.output_file_edit = QLineEdit()
+        self.output_file_button = QPushButton("Select Output File Destination")
+        self.output_file_button.clicked.connect(self.select_output_file_destination)
+
         #formally adds all widgets
         layout.addWidget(self.btn_most_movement)
         layout.addWidget(self.btn_medium_movement)
@@ -102,6 +107,9 @@ class ActigraphyProcessorApp(QWidget):
         layout.addWidget(self.set_roi_check)
         layout.addWidget(self.name_stamp_check)
         layout.addWidget(self.start_button)
+        layout.addWidget(self.output_file_label)
+        layout.addWidget(self.output_file_edit)
+        layout.addWidget(self.output_file_button)
 
         self.setLayout(layout)
         self.setWindowTitle('Actigraphy')
@@ -112,6 +120,21 @@ class ActigraphyProcessorApp(QWidget):
         self.percentage_threshold_edit.setText(settings['percentage_threshold'])
         self.min_size_threshold_edit.setText(settings['min_size_threshold'])
         self.dilation_kernel_edit.setText(settings['dilation_kernel'])
+    
+    def select_output_file_destination(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getSaveFileName(
+            self,
+            "Select Output CSV File Destination",
+            "",  # You can specify a default path here
+            "CSV Files (*.csv)",
+            options=options
+        )
+        if fileName:
+            if not fileName.endswith('.csv'):
+                fileName += '.csv'
+            self.output_file_edit.setText(fileName)
 
     def browse_video_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, 'Open Video File', '', 'MP4 files (*.mp4)')
@@ -150,6 +173,14 @@ class ActigraphyProcessorApp(QWidget):
         # Disable start button to prevent multiple concurrent operations
         self.start_button.setEnabled(False)
 
+        # Set the output file path if the user has selected one
+        output_csv_path = self.output_file_edit.text().strip()
+        if output_csv_path:
+            self.actigraphy_processor.output_file_path = output_csv_path
+        else:
+            # If no output path is provided, use the default naming strategy
+            self.actigraphy_processor.output_file_path = None
+
         # Check if a single video file or video directory has been specified
         if video_file:
             self.worker = Worker(self.actigraphy_processor.process_single_video_file,
@@ -186,6 +217,7 @@ class ActigraphyProcessorApp(QWidget):
 class ActigraphyProcessor:
     def __init__(self):
         self.roi_pts=None
+        self.output_file_path=None
         self.min_size_threshold = 0.0
         self.global_threshold = 0.0
         self.percentage_threshold = 0.0
@@ -245,11 +277,13 @@ class ActigraphyProcessor:
         frame_number = 0
 
         # Output CSV file path
-        # can edit file name here
-        outputfile_name = os.path.splitext(os.path.basename(video_file))[0] + "_actigraphy.csv"
-        # can edit file save path here
-        save_directory = os.path.dirname(video_file)
-        output_file_path = os.path.join(save_directory, outputfile_name)
+        if self.output_file_path:
+            output_file_path = self.output_file_path
+        else:
+            # Existing code to generate default file name
+            outputfile_name = os.path.splitext(os.path.basename(video_file))[0] + "_actigraphy.csv"
+            save_directory = os.path.dirname(video_file)
+            output_file_path = os.path.join(save_directory, outputfile_name)
 
         with open(output_file_path, 'w', newline='') as output_file:
             writer = csv.writer(output_file)
