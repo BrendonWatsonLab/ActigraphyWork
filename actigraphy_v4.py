@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButto
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QMessageBox
 import numpy as np
 import argparse
 import os
@@ -211,7 +212,10 @@ class ActigraphyProcessorApp(QWidget):
         self.progress_bar.setValue(value)
 
     def on_processing_finished(self):
+        # Set progress bar to 100% to indicate completion
+        self.progress_bar.setValue(100)
         print("Actigraphy processing has been completed.")
+        QMessageBox.information(self, "Actigraphy Processing", "Actigraphy processing has been completed.")
         self.start_button.setEnabled(True)  # Re-enable the start button
 
 class ActigraphyProcessor:
