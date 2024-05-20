@@ -30,9 +30,9 @@ class ActigraphyProcessorApp(QWidget):
         super().__init__()
         # can edit three default settings for buttons
         self.actigraphy_processor = actigraphy_processor
-        self.settings_most_movement = {'global_threshold': '10', 'percentage_threshold': '20', 'min_size_threshold': '100', 'dilation_kernel': '3'}
-        self.settings_medium_movement = {'global_threshold': '15', 'percentage_threshold': '25', 'min_size_threshold': '120', 'dilation_kernel': '4'}
-        self.settings_only_large_movement = {'global_threshold': '20', 'percentage_threshold': '30', 'min_size_threshold': '140', 'dilation_kernel': '5'}
+        self.settings_most_movement = {'global_threshold': '15', 'percentage_threshold': '25', 'min_size_threshold': '120', 'dilation_kernel': '4'}
+        self.settings_medium_movement = {'global_threshold': '30', 'percentage_threshold': '35', 'min_size_threshold': '160', 'dilation_kernel': '3'}
+        self.settings_only_large_movement = {'global_threshold': '40', 'percentage_threshold': '50', 'min_size_threshold': '200', 'dilation_kernel': '2'}
         self.init_ui()
 
     def init_ui(self):
