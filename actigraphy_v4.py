@@ -30,8 +30,9 @@ class Worker(QThread):
 class ActigraphyProcessorApp(QWidget):
     def __init__(self, actigraphy_processor):
         super().__init__()
-        # can edit three default settings for buttons
         self.actigraphy_processor = actigraphy_processor
+        self.output_directory = None
+        # can edit three default settings for buttons
         self.settings_most_movement = {'global_threshold': '15', 'percentage_threshold': '25', 'min_size_threshold': '120', 'dilation_kernel': '4'}
         self.settings_medium_movement = {'global_threshold': '30', 'percentage_threshold': '35', 'min_size_threshold': '160', 'dilation_kernel': '3'}
         self.settings_only_large_movement = {'global_threshold': '40', 'percentage_threshold': '50', 'min_size_threshold': '200', 'dilation_kernel': '2'}
@@ -80,10 +81,10 @@ class ActigraphyProcessorApp(QWidget):
         self.btn_medium_movement.clicked.connect(lambda: self.set_defaults(self.settings_medium_movement))
         self.btn_only_large_movement.clicked.connect(lambda: self.set_defaults(self.settings_only_large_movement))
 
-        self.output_file_label = QLabel("Output CSV File:")
-        self.output_file_edit = QLineEdit()
-        self.output_file_button = QPushButton("Select Output File Destination")
-        self.output_file_button.clicked.connect(self.select_output_file_destination)
+        self.output_directory_label = QLabel("Output CSV File:")
+        self.output_directory_edit = QLineEdit()
+        self.output_directory_button = QPushButton("Select Output File Destination")
+        self.output_directory_button.clicked.connect(self.select_output_file_destination)
 
         #formally adds all widgets
         layout.addWidget(self.btn_most_movement)
@@ -108,9 +109,9 @@ class ActigraphyProcessorApp(QWidget):
         layout.addWidget(self.set_roi_check)
         layout.addWidget(self.name_stamp_check)
         layout.addWidget(self.start_button)
-        layout.addWidget(self.output_file_label)
-        layout.addWidget(self.output_file_edit)
-        layout.addWidget(self.output_file_button)
+        layout.addWidget(self.output_directory_label)
+        layout.addWidget(self.output_directory_edit)
+        layout.addWidget(self.output_directory_button)
 
         self.setLayout(layout)
         self.setWindowTitle('Actigraphy')
@@ -125,17 +126,16 @@ class ActigraphyProcessorApp(QWidget):
     def select_output_file_destination(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(
+        directory = QFileDialog.getExistingDirectory(
             self,
-            "Select Output CSV File Destination",
+            "Select Output Directory",
             "",  # You can specify a default path here
-            "CSV Files (*.csv)",
             options=options
         )
-        if fileName:
-            if not fileName.endswith('.csv'):
-                fileName += '.csv'
-            self.output_file_edit.setText(fileName)
+        if directory:
+            # Assuming you want to set the output directory to a class member
+            self.output_directory = directory
+            self.output_directory_edit.setText(directory)
 
     def browse_video_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, 'Open Video File', '', 'MP4 files (*.mp4)')
@@ -175,9 +175,9 @@ class ActigraphyProcessorApp(QWidget):
         self.start_button.setEnabled(False)
 
         # Set the output file path if the user has selected one
-        output_csv_path = self.output_file_edit.text().strip()
-        if output_csv_path:
-            self.actigraphy_processor.output_file_path = output_csv_path
+        output_file_path = self.output_directory_edit.text().strip()
+        if output_file_path:
+            self.actigraphy_processor.output_file_path = output_file_path
         else:
             # If no output path is provided, use the default naming strategy
             self.actigraphy_processor.output_file_path = None
@@ -196,12 +196,12 @@ class ActigraphyProcessorApp(QWidget):
             # Create the worker for processing the folder
             self.worker = Worker(
                 self.actigraphy_processor.process_video_files, 
-                video_folder, oaf, set_roi, name_stamp
+                video_folder, oaf, set_roi, name_stamp, self.output_directory
             )
         
             # Connect the progress signal before starting the worker
             self.worker.kwargs['progress_callback'] = self.worker.progress_signal
-            self.worker.progress_signal.connect(self.update_progress_bar)
+            self.worker.progress_signal.connect(self.update_folder_progress_bar)
             self.worker.finished.connect(self.on_processing_finished)
             self.worker.start()
         else:
@@ -209,6 +209,9 @@ class ActigraphyProcessorApp(QWidget):
             self.start_button.setEnabled(True)
         
     def update_progress_bar(self, value):
+        self.progress_bar.setValue(value)
+
+    def update_folder_progress_bar(self, value):
         self.progress_bar.setValue(value)
 
     def on_processing_finished(self):
@@ -266,7 +269,7 @@ class ActigraphyProcessor:
         
         return mp4_files
 
-    def process_single_video_file(self, video_file, name_stamp, set_roi, roi_pts=None, progress_callback=None):
+    def process_single_video_file(self, video_file, name_stamp, set_roi, output_directory, progress_callback, roi_pts=None):
         # Determine whether to use creation time from the file name or os.path.getctime
         if name_stamp or name_stamp is None:
             print("Extracting creation time from the name.")
@@ -280,14 +283,10 @@ class ActigraphyProcessor:
         prev_frame = None
         frame_number = 0
 
-        # Output CSV file path
-        if self.output_file_path:
-            output_file_path = self.output_file_path
-        else:
-            # Existing code to generate default file name
-            outputfile_name = os.path.splitext(os.path.basename(video_file))[0] + "_actigraphy.csv"
-            save_directory = os.path.dirname(video_file)
-            output_file_path = os.path.join(save_directory, outputfile_name)
+        # Automatically generate the output CSV file path based on the video file name
+        outputfile_name = os.path.splitext(os.path.basename(video_file))[0] + "_actigraphy.csv"
+        # If an output directory is provided, use it; otherwise, save next to the video file
+        output_file_path = os.path.join(output_directory, outputfile_name) if output_directory else os.path.join(os.path.dirname(video_file), outputfile_name)
 
         with open(output_file_path, 'w', newline='') as output_file:
             writer = csv.writer(output_file)
@@ -331,7 +330,7 @@ class ActigraphyProcessor:
             print(f"Actigraphy processing completed for {video_file}")
             print("*" * 75)
 
-    def process_video_files(self, video_folder, oaf, set_roi, name_stamp, progress_callback=None):
+    def process_video_files(self, video_folder, oaf, set_roi, name_stamp, output_directory, progress_callback=None):
         nested_folders = self.get_nested_paths(video_folder)
         all_mp4_files = [
             os.path.join(folder, mp4_file)
@@ -341,23 +340,34 @@ class ActigraphyProcessor:
         total_files = len(all_mp4_files)
         files_processed = 0
 
+        if total_files == 0:
+            print("No video files to process.")
+            return
+
+        # Initialize roi_pts here if set_roi is True and the ROI hasn't been set yet
+        if set_roi and not self.roi_pts and all_mp4_files:
+            first_video_file = all_mp4_files[0]
+            cap = cv2.VideoCapture(first_video_file)
+            if cap.isOpened():
+                self.roi_pts = self._select_roi_from_first_frame(cap)
+                cap.release()  # Release the capture object after getting ROI
+            else:
+                print(f"Failed to open the first video file: {first_video_file}")
+                return
+
         for mp4_file in all_mp4_files:
             # Process the single video file
-            self.process_single_video_file(mp4_file, name_stamp, set_roi, self.roi_pts)
-            
-            # Increment the number of processed files
+            self.process_single_video_file(mp4_file, name_stamp, set_roi, output_directory, None, self.roi_pts)
+        
             files_processed += 1
-
-            # Emit the updated cumulative progress for the entire folder
+            # Calculate and emit the overall processing progress
             if progress_callback:
                 folder_progress = int((files_processed / total_files) * 100)
                 progress_callback.emit(folder_progress)
 
-            # Initialize roi_pts to None for the first video in the list, or retain previously set ROI
-            if set_roi and not self.roi_pts:
-                cap = cv2.VideoCapture(mp4_file)
-                self.roi_pts = self._select_roi_from_first_frame(cap)
-                cap.release()  # Make sure to release the capture object
+        # Emit the final signal when done
+        if progress_callback:
+            progress_callback.emit(100)
 
     def _select_roi_from_first_frame(self, cap):
         # Open the first frame for user to select ROI points
