@@ -11,7 +11,7 @@ Combine_Sort_csv(parentDir, folder_name);
 %% Per Day Analysis
 Per_Day_Analysis('Most_Movement_Data_combined_data.csv','Most Movement', 'Rollo')
 Per_Day_Analysis('Medium_Movement_Data_combined_data.csv','Medium Movement', 'Rollo')
-Per_Day_Analysis('Only_Large_Movement_Data_combined_data.csv','Medium Movement', 'Rollo')
+Per_Day_Analysis('Only_Large_Movement_Data_combined_data.csv','Only Large Movement', 'Rollo')
 
 %% Total Hourly Analysis
 Most_Mov = readtable('Most_Movement_Data_combined_data.csv');
@@ -36,7 +36,7 @@ bar(hourlySumMostMov.Hour, hourlySumMostMov.sum_SelectedPixelDifference, 'BarWid
 
 title('Most Movement');
 xlabel('Hour of Day');
-ylabel('Sum of Selected Pixel Difference');
+ylabel('Sum of PixelDifference');
 
 xlim([-0.5, 23.5]);
 xticks(0:23);
@@ -48,7 +48,7 @@ bar(hourlySumMedMov.Hour, hourlySumMedMov.sum_SelectedPixelDifference, 'BarWidth
 
 title('Medium Movement');
 xlabel('Hour of Day');
-ylabel('Sum of Selected Pixel Difference');
+ylabel('Sum of PixelDifference');
 
 xlim([-0.5, 23.5]);
 xticks(0:23);
@@ -60,7 +60,7 @@ bar(hourlySumOnlyLargeMov.Hour, hourlySumOnlyLargeMov.sum_SelectedPixelDifferenc
 
 title('Only Large Movement');
 xlabel('Hour of Day');
-ylabel('Sum of Selected Pixel Difference');
+ylabel('Sum of PixelDifference');
 
 xlim([-0.5, 23.5]);
 xticks(0:23);
