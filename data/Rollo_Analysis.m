@@ -44,16 +44,19 @@ figure;
 subplot(3,1,1);
 b1 = bar(hourlySumMostMov.Hour, hourlySumMostMov.sum_SelectedPixelDifference, 'BarWidth', 1);
 addShadedAreaToPlot();
+title('Most Movement');
 
 % Medium Movement
 subplot(3,1,2);
 b2 = bar(hourlySumMedMov.Hour, hourlySumMedMov.sum_SelectedPixelDifference, 'BarWidth', 1);
 addShadedAreaToPlot();
+title('Medium Movement');
 
 % Only Large Movement
 subplot(3,1,3);
 b3 = bar(hourlySumOnlyLargeMov.Hour, hourlySumOnlyLargeMov.sum_SelectedPixelDifference, 'BarWidth', 1);
 addShadedAreaToPlot();
+title('Only Large Movement');
 
 uistack(b1, 'top'); 
 uistack(b2, 'top'); 
@@ -71,7 +74,6 @@ function addShadedAreaToPlot()
     fill(x_shaded, y_shaded, fill_color, 'EdgeColor', 'none');
     
     % Additional Plot settings
-    title('Movement');
     xlabel('Hour of Day (ZT Time)');
     ylabel('Sum of PixelDifference');
     xlim([-0.5, 23.5]);
