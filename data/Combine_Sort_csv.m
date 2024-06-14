@@ -44,11 +44,11 @@ for k = 1:length(subFolders)
 
     % Convert 'PositTime' from milliseconds to seconds
     PositTime_seconds = sortedCombinedData.PositTime / 1000;
-    % Convert to datetime
-    PositTime_datetime = datetime(PositTime_seconds, 'ConvertFrom', 'posixtime','Format', 'yyyy-MM-dd HH:mm:ss.SSS');
-    % Now replace the 'PositTime' column with the datetime data
+    % Convert to datetime (in UTC)
+    PositTime_datetime = datetime(PositTime_seconds, 'ConvertFrom', 'posixtime', 'Format', 'yyyy-MM-dd HH:mm:ss.SSS', 'TimeZone', 'UTC');
+    % Convert time from UTC to EST
+    PositTime_datetime.TimeZone = 'America/New_York';  % This will take into account Daylight Saving Time
     sortedCombinedData.PositTime = PositTime_datetime;
-    % Rename the 'PositTime' column to 'Date'
     sortedCombinedData.Properties.VariableNames{'PositTime'} = 'Date';
     
     % Write the sorted combined data to a new CSV file.
