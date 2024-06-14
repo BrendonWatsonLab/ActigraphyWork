@@ -115,6 +115,8 @@ class ActigraphyProcessorApp(QWidget):
 
         self.setLayout(layout)
         self.setWindowTitle('Actigraphy')
+        # Set the minimum width of the window
+        self.setMinimumWidth(800)
 
     def set_defaults(self, settings):
         # Update line edits with default values
