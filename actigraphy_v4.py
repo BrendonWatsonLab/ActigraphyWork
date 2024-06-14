@@ -7,6 +7,7 @@ from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QScrollArea
 import numpy as np
 import argparse
 import os
@@ -39,6 +40,8 @@ class ActigraphyProcessorApp(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        self.scroll_area = QScrollArea()  # Create a new QScrollArea
+        self.scroll_area.setWidgetResizable(True)
         layout = QVBoxLayout()
         # creating buttons for the GUI layout
         self.video_file_label = QLabel("Video File:")
@@ -113,10 +116,24 @@ class ActigraphyProcessorApp(QWidget):
         layout.addWidget(self.output_directory_edit)
         layout.addWidget(self.output_directory_button)
 
-        self.setLayout(layout)
+        # Create a container widget for the layout
+        container = QWidget()
+        container.setLayout(layout)
+
+        # Set the layout container as the scroll area's widget
+        self.scroll_area.setWidget(container)
+
+        # Create a new layout to hold the scroll area
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(self.scroll_area)
+
+        # Set the main layout for the window
+        self.setLayout(main_layout)
         self.setWindowTitle('Actigraphy')
-        # Set the minimum width of the window
+    
+        # Set the minimum width and maximum height of the window
         self.setMinimumWidth(800)
+        self.setMaximumHeight(600)
 
     def set_defaults(self, settings):
         # Update line edits with default values
