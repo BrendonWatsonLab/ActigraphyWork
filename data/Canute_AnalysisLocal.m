@@ -1,23 +1,16 @@
-% Rollo 5-Day Video Analysis
+% Canute 5/7 Day Video Analysis
 % Noah Muscat
-% data ran from /data/Jeremy/Rollo using actigraphy_v4.py
+% data ran from /data/Jeremy/Canute using actigraphy_v4.py
 
-%% Combines all csv files for all folders under 'data'
-% Set the parent directory where the 'data' folder is located.
-parentDir = '/Users/noahmuscat/Desktop/Actigraphy Stuff/data';
-folder_name = 'Rollo220131';
-% combines and sorts the csv files
-Combine_Sort_csv(parentDir, folder_name);
-%% Per Day Analysis
-make_ZT_bool = true;
-Per_Day_Analysis('Most_Movement_Data_combined_data.csv','Most Movement', 'Rollo',make_ZT_bool)
-Per_Day_Analysis('Medium_Movement_Data_combined_data.csv','Medium Movement', 'Rollo',make_ZT_bool)
-Per_Day_Analysis('Only_Large_Movement_Data_combined_data.csv','Only Large Movement', 'Rollo',make_ZT_bool)
+%% Canute 231207
+make_ZT_bool = false;
+Per_Day_Analysis('Canute_231207_Videos_Most_Movement_combined.csv','Most Movement', 'Canute',make_ZT_bool)
+Per_Day_Analysis('Canute_231207_Videos_Medium_Movement_combined.csv','Medium Movement', 'Canute',make_ZT_bool)
+Per_Day_Analysis('Canute_231207_Videos_Only_Large_Movement_combined.csv','Only Large Movement', 'Canute',make_ZT_bool)
 
-%% Total Hourly Analysis
-Most_Mov = readtable('Most_Movement_Data_combined_data.csv');
-Med_Mov = readtable('Medium_Movement_Data_combined_data.csv');
-Only_Large_Mov = readtable('Only_Large_Movement_Data_combined_data.csv');
+Most_Mov = readtable('Canute_231207_Videos_Most_Movement_combined.csv');
+Med_Mov = readtable('Canute_231207_Videos_Medium_Movement_combined.csv');
+Only_Large_Mov = readtable('Canute_231207_Videos_Only_Large_Movement_combined.csv');
 
 % Set this to true to convert times in the datasets to Zeitgeber time
 convert_ZT = true;
@@ -43,27 +36,81 @@ figure;
 % Most Movement
 subplot(3,1,1);
 b1 = bar(hourlySumMostMov.Hour, hourlySumMostMov.sum_SelectedPixelDifference, 'BarWidth', 1);
-addShadedAreaToPlot();
+addShadedAreaToPlotZT();
 title('Most Movement');
 
 % Medium Movement
 subplot(3,1,2);
 b2 = bar(hourlySumMedMov.Hour, hourlySumMedMov.sum_SelectedPixelDifference, 'BarWidth', 1);
-addShadedAreaToPlot();
+addShadedAreaToPlotZT();
 title('Medium Movement');
 
 % Only Large Movement
 subplot(3,1,3);
 b3 = bar(hourlySumOnlyLargeMov.Hour, hourlySumOnlyLargeMov.sum_SelectedPixelDifference, 'BarWidth', 1);
-addShadedAreaToPlot();
+addShadedAreaToPlotZT();
 title('Only Large Movement');
 
 uistack(b1, 'top'); 
 uistack(b2, 'top'); 
 uistack(b3, 'top'); 
 
+%% Canute 231214
+make_ZT_bool = true;
+Per_Day_Analysis('Canute_231214_Videos_Most_Movement_combined.csv','Most Movement', 'Canute',make_ZT_bool)
+Per_Day_Analysis('Canute_231214_Videos_Medium_Movement_combined.csv','Medium Movement', 'Canute',make_ZT_bool)
+Per_Day_Analysis('Canute_231214_Videos_Only_Large_Movement_combined.csv','Only Large Movement', 'Canute',make_ZT_bool)
+
+Most_Mov = readtable('Canute_231214_Videos_Most_Movement_combined.csv');
+Med_Mov = readtable('Canute_231214_Videos_Medium_Movement_combined.csv');
+Only_Large_Mov = readtable('Canute_231214_Videos_Only_Large_Movement_combined.csv');
+
+% Set this to true to convert times in the datasets to Zeitgeber time
+convert_ZT = true;
+
+if convert_ZT
+    Most_Mov = make_ZT(Most_Mov, 5);
+    Med_Mov = make_ZT(Med_Mov, 5);
+    Only_Large_Mov = make_ZT(Only_Large_Mov, 5);
+end
+
+% Creating an 'Hour' column that represents just the hour part of 'Date'
+Most_Mov.Hour = hour(Most_Mov.Date);
+Med_Mov.Hour = hour(Med_Mov.Date);
+Only_Large_Mov.Hour = hour(Only_Large_Mov.Date);
+
+% Now summarize 'SelectedPixelDifference' by the 'Hour' column across all entries in dataTable
+hourlySumMostMov = groupsummary(Most_Mov, 'Hour', 'sum', 'SelectedPixelDifference');
+hourlySumMedMov = groupsummary(Med_Mov, 'Hour', 'sum', 'SelectedPixelDifference');
+hourlySumOnlyLargeMov = groupsummary(Only_Large_Mov, 'Hour', 'sum', 'SelectedPixelDifference');
+
+figure;
+
+% Most Movement
+subplot(3,1,1);
+b1 = bar(hourlySumMostMov.Hour, hourlySumMostMov.sum_SelectedPixelDifference, 'BarWidth', 1);
+addShadedAreaToPlotZT();
+title('Most Movement');
+
+% Medium Movement
+subplot(3,1,2);
+b2 = bar(hourlySumMedMov.Hour, hourlySumMedMov.sum_SelectedPixelDifference, 'BarWidth', 1);
+addShadedAreaToPlotZT();
+title('Medium Movement');
+
+% Only Large Movement
+subplot(3,1,3);
+b3 = bar(hourlySumOnlyLargeMov.Hour, hourlySumOnlyLargeMov.sum_SelectedPixelDifference, 'BarWidth', 1);
+addShadedAreaToPlotZT();
+title('Only Large Movement');
+
+uistack(b1, 'top'); 
+uistack(b2, 'top'); 
+uistack(b3, 'top'); 
+
+%% Functions
 % Function to add a shaded area to the current plot
-function addShadedAreaToPlot()
+function addShadedAreaToPlotZT()
     hold on;
     % Define x and y coordinates for the shaded area (from t=12 to t=24)
     x_shaded = [12, 24, 24, 12];
@@ -83,6 +130,7 @@ function addShadedAreaToPlot()
     hold off;
 end
 
+% Restatement of make_ZT, weird error reasons idk... 
 function [dataset] = make_ZT(dataset, lights_on_hour)
     % This function assumes that the dataset has a datetime column named 'Date'
     % Adjust the 'Date' column in the dataset to zeitgeber time with the given lights on hour.
