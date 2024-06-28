@@ -66,7 +66,7 @@ function addShadedAreaToPlotZT()
     ylabel('Sum of PixelDifference');
     xlim([-0.5, 23.5]);
     xticks(0:23);
-    xtickangle(0);
+    xtickangle(90);
     
     hold off;
 end
@@ -94,6 +94,7 @@ function addShadedAreaToPlotNonZT()
     xlabel('Hour of Day (EST Time)');
     ylabel('Sum of PixelDifference');
     xlim([-0.5, 24.5]); % Adjust the x-axis limit to go from -0.5 to 24.5
+    xtickangle(90);
     
     hold off;
 end
