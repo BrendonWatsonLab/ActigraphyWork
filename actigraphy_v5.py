@@ -205,7 +205,7 @@ class ActigraphyProcessorApp(QWidget):
         # Check if a single video file or video directory has been specified
         if video_file:
             self.worker = Worker(self.actigraphy_processor.process_single_video_file,
-                                 video_file, name_stamp, set_roi)
+                                 video_file, name_stamp, set_roi, self.output_directory)
             # Now correctly pass the progress_callback as an argument to process_single_video_file
             self.worker.kwargs['progress_callback'] = self.worker.progress_signal
             # Connect signals
@@ -488,6 +488,8 @@ class ActigraphyProcessor:
 
         # Calculate the sum of the filtered mask to get the count of selected pixels
         selected_pixel_diff = np.sum(filtered_mask)
+
+        print(f"RMSE: {rmse}, Raw Diff: {raw_diff}, Selected Pixels: {selected_pixel_diff}")
 
         return raw_diff, rmse, selected_pixel_diff
 
