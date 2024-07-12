@@ -12,7 +12,7 @@ for k = 1:length(subFolders)
     folderPath = fullfile(dataDir, folderName);
 
     % Define the name of the combined file based on the subfolder
-    combinedFileName = [folderName '_combined_data.csv'];
+    combinedFileName = [folder_name '_' folderName '_combined_data.csv'];
     
     % Get a list of CSV files in the current folder.
     csvFiles = dir(fullfile(folderPath, '*.csv'));
