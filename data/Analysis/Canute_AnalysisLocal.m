@@ -2,6 +2,13 @@
 % Noah Muscat
 % data ran from /data/Jeremy/Canute using actigraphy_v4.py
 
+%% 300 vs 1000 lux
+datafile300 = 'Canute_231207_Videos_Most_Movement_combined.csv';
+datafile1000 = 'Most_Movement_combined_data.csv'; % weird filename, don't ask
+
+% Compare movements between the two lighting conditions and plot results
+CompareLightingConditions(datafile300, datafile1000, true);
+
 %% Canute 231207
 make_ZT_bool = true;
 Per_Day_Analysis('Canute_231207_Videos_Most_Movement_combined.csv','Most Movement', 'Canute',make_ZT_bool)

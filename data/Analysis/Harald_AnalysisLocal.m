@@ -7,6 +7,15 @@ parentDir = '/Volumes/data/Jeremy/Harald';
 folder_name = 'Harald_240402_videos_sleepdep';
 % combines and sorts the csv files
 Combine_Sort_csv(parentDir, folder_name);
+
+%% 300 vs 1000 Lux
+% Define datafile paths
+datafile300 = 'Harald_240220_Videos_Most_Movement_combined.csv';
+datafile1000 = 'Harald_240326_videosMost_combined_data.csv';
+
+% Compare movements between the two lighting conditions and plot results
+CompareLightingConditions(datafile300, datafile1000, true);
+
 %% Harald 240220
 make_ZT_bool = true;
 Per_Day_Analysis('Harald_240220_Videos_Most_Movement_combined.csv','Most Movement', 'Harald',make_ZT_bool)
