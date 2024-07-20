@@ -19,33 +19,46 @@ numSubplotCols = ceil(numDays / numSubplotRows);
 figure;
 % For each unique day, create a histogram of 'SelectedPixelDifference' binned by hour
 for i = 1:numDays
-    subplot(numSubplotRows, numSubplotCols, i);
-    
-    % Create a logical index for the current day
-    dayIndex = dataTable.Day == uniqueDays(i);
-    currentDayData = dataTable(dayIndex, :);
-    
-    % Use 'groupsummary' to calculate the sum or mean of 'SelectedPixelDifference' binned by hourly bins
-    hourlySummary = groupsummary(currentDayData, 'HourlyBins', 'sum', 'SelectedPixelDifference');
-    
-    % Convert the HourlyBins back to just the hours
-    hourNumbers = hour(hourlySummary.HourlyBins);
-    b1 = bar(hourNumbers, hourlySummary.sum_SelectedPixelDifference, 'BarWidth', 1);
-    title(sprintf(datestr(uniqueDays(i), 'yyyy-mm-dd')));
-    if convert_ZT 
-        addShadedAreaToPlotZT();
-    else
-        addShadedAreaToPlotNonZT();
+    % Make sure the current day is valid and not NaT (Not-a-Time)
+    if isdatetime(uniqueDays(i)) && ~isnat(uniqueDays(i))
+        subplot(numSubplotRows, numSubplotCols, i);
+
+        % Create a logical index for the current day
+        dayIndex = dataTable.Day == uniqueDays(i);
+        currentDayData = dataTable(dayIndex, :);
+
+        % Use 'groupsummary' to calculate the sum or mean of 'SelectedPixelDifference' binned by hourly bins
+        hourlySummary = groupsummary(currentDayData, 'HourlyBins', 'sum', 'SelectedPixelDifference');
+
+        % Convert the HourlyBins back to just the hours
+        hourNumbers = hour(hourlySummary.HourlyBins);
+        b1 = bar(hourNumbers, hourlySummary.sum_SelectedPixelDifference, 'BarWidth', 1);
+
+        % Check if uniqueDays(i) is a numeric datenum or already a datetime
+        if isnumeric(uniqueDays(i))
+            dateTitle = datetime(uniqueDays(i), 'ConvertFrom', 'datenum');
+        else
+            dateTitle = uniqueDays(i); % Assuming it's already a datetime
+        end
+        % Format the datetime to display only day, month, and year
+        formattedTitle = datestr(dateTitle, 'dd-mmm-yyyy');
+        % Set the subplot title
+        title(formattedTitle);
+
+        if convert_ZT 
+            addShadedAreaToPlotZT();
+        else
+            addShadedAreaToPlotNonZT();
+        end
+
+        % Reduce the number of ticks if there are many subplots to avoid cluttered x-axis labels
+        if numSubplotCols <= 4
+            xticks(0:1:23);
+        else
+            xticks(0:2:23);
+        end
+        uistack(b1, 'top');
     end
-    
-    % Reduce the number of ticks if there are many subplots to avoid cluttered x-axis labels
-    if numSubplotCols <= 4
-        xticks(0:1:23);
-    else
-        xticks(0:2:23);
-    end
-    uistack(b1, 'top');
-    
 end
 title_string = strcat(movement_param, '-', rat_name);
 sgtitle(title_string);

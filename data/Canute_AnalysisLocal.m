@@ -3,7 +3,7 @@
 % data ran from /data/Jeremy/Canute using actigraphy_v4.py
 
 %% Canute 231207
-make_ZT_bool = false;
+make_ZT_bool = true;
 Per_Day_Analysis('Canute_231207_Videos_Most_Movement_combined.csv','Most Movement', 'Canute',make_ZT_bool)
 Per_Day_Analysis('Canute_231207_Videos_Medium_Movement_combined.csv','Medium Movement', 'Canute',make_ZT_bool)
 Per_Day_Analysis('Canute_231207_Videos_Only_Large_Movement_combined.csv','Only Large Movement', 'Canute',make_ZT_bool)

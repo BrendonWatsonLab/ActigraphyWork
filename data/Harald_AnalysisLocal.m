@@ -8,10 +8,10 @@ folder_name = 'Harald_240402_videos_sleepdep';
 % combines and sorts the csv files
 Combine_Sort_csv(parentDir, folder_name);
 %% Harald 240220
-make_ZT_bool = false;
-Per_Day_Analysis('Harald_240220_Videos_Most_Movement_combined.csv','Most Movement', 'Canute',make_ZT_bool)
-Per_Day_Analysis('Harald_240220_Videos_Medium_Movement_combined.csv','Medium Movement', 'Canute',make_ZT_bool)
-Per_Day_Analysis('Harald_240220_Videos_Only_Large_Movement_combined.csv','Only Large Movement', 'Canute',make_ZT_bool)
+make_ZT_bool = true;
+Per_Day_Analysis('Harald_240220_Videos_Most_Movement_combined.csv','Most Movement', 'Harald',make_ZT_bool)
+Per_Day_Analysis('Harald_240220_Videos_Medium_Movement_combined.csv','Medium Movement', 'Harald',make_ZT_bool)
+Per_Day_Analysis('Harald_240220_Videos_Only_Large_Movement_combined.csv','Only Large Movement', 'Harald',make_ZT_bool)
 
 Most_Mov = readtable('Harald_240220_Videos_Most_Movement_combined.csv');
 Med_Mov = readtable('Harald_240220_Videos_Medium_Movement_combined.csv');
@@ -62,9 +62,9 @@ uistack(b3, 'top');
 
 %% Harald 240228
 make_ZT_bool = true;
-Per_Day_Analysis('Harald_240228_Videos_Most_Movement_combined.csv','Most Movement', 'Canute',make_ZT_bool)
-Per_Day_Analysis('Harald_240228_Videos_Medium_Movement_combined.csv','Medium Movement', 'Canute',make_ZT_bool)
-Per_Day_Analysis('Harald_240228_Videos_Only_Large_Movement_combined.csv','Only Large Movement', 'Canute',make_ZT_bool)
+Per_Day_Analysis('Harald_240228_Videos_Most_Movement_combined.csv','Most Movement', 'Harald',make_ZT_bool)
+Per_Day_Analysis('Harald_240228_Videos_Medium_Movement_combined.csv','Medium Movement', 'Harald',make_ZT_bool)
+Per_Day_Analysis('Harald_240228_Videos_Only_Large_Movement_combined.csv','Only Large Movement', 'Harald',make_ZT_bool)
 
 Most_Mov = readtable('Harald_240228_Videos_Most_Movement_combined.csv');
 Med_Mov = readtable('Harald_240228_Videos_Medium_Movement_combined.csv');
@@ -115,9 +115,9 @@ uistack(b3, 'top');
 
 %% Harald 240326
 make_ZT_bool = true;
-Per_Day_Analysis('Harald_240326_videosMost_combined_data.csv','Most Movement', 'Canute',make_ZT_bool)
-Per_Day_Analysis('Harald_240326_videosMedium_combined_data.csv','Medium Movement', 'Canute',make_ZT_bool)
-Per_Day_Analysis('Harald_240326_videosOnlyLarge_combined_data.csv','Only Large Movement', 'Canute',make_ZT_bool)               
+Per_Day_Analysis('Harald_240326_videosMost_combined_data.csv','Most Movement', 'Harald',make_ZT_bool)
+Per_Day_Analysis('Harald_240326_videosMedium_combined_data.csv','Medium Movement', 'Harald',make_ZT_bool)
+Per_Day_Analysis('Harald_240326_videosOnlyLarge_combined_data.csv','Only Large Movement', 'Harald',make_ZT_bool)               
 
 Most_Mov = readtable('Harald_240326_videosMost_combined_data.csv');
 Med_Mov = readtable('Harald_240326_videosMedium_combined_data.csv');
@@ -167,9 +167,9 @@ uistack(b2, 'top');
 uistack(b3, 'top'); 
 %% Harald 240402sleepdep
 make_ZT_bool = true;
-Per_Day_Analysis('Harald_240402_videos_sleepdep_Most_combined_data.csv','Most Movement', 'Canute',make_ZT_bool)
-Per_Day_Analysis('Harald_240402_videos_sleepdep_Medium_combined_data.csv','Medium Movement', 'Canute',make_ZT_bool)
-Per_Day_Analysis('Harald_240402_videos_sleepdep_OnlyLarge_combined_data.csv','Only Large Movement', 'Canute',make_ZT_bool)               
+Per_Day_Analysis('Harald_240402_videos_sleepdep_Most_combined_data.csv','Most Movement', 'Harald',make_ZT_bool)
+Per_Day_Analysis('Harald_240402_videos_sleepdep_Medium_combined_data.csv','Medium Movement', 'Harald',make_ZT_bool)
+Per_Day_Analysis('Harald_240402_videos_sleepdep_OnlyLarge_combined_data.csv','Only Large Movement', 'Harald',make_ZT_bool)               
 
 Most_Mov = readtable('Harald_240402_videos_sleepdep_Most_combined_data.csv');
 Med_Mov = readtable('Harald_240402_videos_sleepdep_Medium_combined_data.csv');
