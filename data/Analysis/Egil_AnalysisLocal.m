@@ -10,15 +10,12 @@ folder_name2 = 'Egil_240505_videos';
 Combine_Sort_csv(parentDir, folder_name1);
 Combine_Sort_csv(parentDir, folder_name2);
 
-%% Lights on vs off analysis
-parentDir = '/Volumes/data/Jeremy/Egil';
-% Define datafile path
-datafile1 = 'Egil_240426_videos_Most_combined_data.csv';
-datafile2 = 'Egil_240505_videos_Most_combined_data.csv';
+%% Circadian Analysis
+datafile300 = 'Egil_240426_videos_Most_combined_data.csv';
+datafile1000Wk1 = 'Egil_240505_videos_Most_combined_data.csv';
 
-% Analyze and plot summary with statistics
-SummarizeAndPlotWithStats(datafile1, true);
-SummarizeAndPlotWithStats(datafile2, true);
+AnalyzeCircadianRunning(datafile300, true, 'Egil300Lux')
+AnalyzeCircadianRunning(datafile1000Wk1, true, 'Egil1000LuxWk1')
 
 %% 300 vs 1000 Lux
 % Define datafile path

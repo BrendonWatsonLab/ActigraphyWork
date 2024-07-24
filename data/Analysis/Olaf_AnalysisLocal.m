@@ -8,6 +8,10 @@ folder_name = 'Olaf_240419_Videos';
 % combines and sorts the csv files
 Combine_Sort_csv(parentDir, folder_name);
 
+%% Circadian Analysis
+data300 = 'Olaf_240419_Videos_Most_combined_data.csv';
+
+AnalyzeCircadianRunning(data300, true, 'Olaf300Lux')
 %% Olaf240419
 make_ZT_bool = true;
 Per_Day_Analysis('Olaf_240419_Videos_Most_combined_data.csv','Most Movement', 'Olaf',make_ZT_bool)

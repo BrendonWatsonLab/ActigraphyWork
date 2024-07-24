@@ -4,10 +4,22 @@
 
 %% 300 vs 1000 lux
 datafile300 = 'Canute_231207_Videos_Most_Movement_combined.csv';
-datafile1000 = 'Most_Movement_combined_data.csv'; % weird filename, don't ask
+datafile1000wk1 = 'Canute_231214_Videos_Most_Movement_combined.csv';
+datafile1000wk4 = 'Most_Movement_combined_data.csv'; % weird filename, don't ask
 
 % Compare movements between the two lighting conditions and plot results
-CompareLightingConditions(datafile300, datafile1000, true);
+CompareLightingConditions(datafile300, datafile1000wk1, datafile1000wk4, true);
+
+%% Circadian Comparisons
+
+datafile300 = 'Canute_231207_Videos_Most_Movement_combined.csv';
+datafile1000wk1 = 'Canute_231214_Videos_Most_Movement_combined.csv';
+datafile1000wk4 = 'Most_Movement_combined_data.csv'; % weird filename, don't ask
+
+AnalyzeCircadianRunning(datafile300, true, 'Canute300Lux');
+AnalyzeCircadianRunning(datafile1000wk1, true, 'Canute1000LuxWk1');
+AnalyzeCircadianRunning(datafile1000wk4, true, 'Canute1000LuxWk4');
+
 
 %% Canute 231207
 make_ZT_bool = true;

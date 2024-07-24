@@ -8,13 +8,27 @@ folder_name = 'Harald_240402_videos_sleepdep';
 % combines and sorts the csv files
 Combine_Sort_csv(parentDir, folder_name);
 
-%% 300 vs 1000 Lux
+%% 300 vs 1000 Lux (or sleepdep)
 % Define datafile paths
 datafile300 = 'Harald_240220_Videos_Most_Movement_combined.csv';
-datafile1000 = 'Harald_240326_videosMost_combined_data.csv';
+datafile1000wk1 = 'Harald_240228_Videos_Most_Movement_combined.csv';
+datafile1000wk4 = 'Harald_240326_videosMost_combined_data.csv';
+datafilesleepdep = 'Harald_240402_videos_sleepdep_Most_combined_data.csv';
 
 % Compare movements between the two lighting conditions and plot results
-CompareLightingConditions(datafile300, datafile1000, true);
+CompareLightingConditions(datafile300, datafile1000wk1, datafile1000wk4, true);
+CompareSleepDep(datafile300, datafile1000wk4, datafilesleepdep, true);
+
+%% Circadian Comparisons
+datafile300 = 'Harald_240220_Videos_Most_Movement_combined.csv';
+datafile1000wk1 = 'Harald_240228_Videos_Most_Movement_combined.csv';
+datafile1000wk4 = 'Harald_240326_videosMost_combined_data.csv';
+datafilesleepdep = 'Harald_240402_videos_sleepdep_Most_combined_data.csv';
+
+AnalyzeCircadianRunning(datafile300, true, 'Harald300Lux');
+AnalyzeCircadianRunning(datafile1000wk1, true, 'Harald1000LuxWk1');
+AnalyzeCircadianRunning(datafile1000wk4, true, 'Harald1000LuxWk4');
+AnalyzeCircadianRunning(datafilesleepdep, true, 'HaraldSleepDep');
 
 %% Harald 240220
 make_ZT_bool = true;

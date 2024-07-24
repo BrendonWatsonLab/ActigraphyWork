@@ -10,6 +10,12 @@ folder_name2 = 'Gunnar_240606_Videos';
 Combine_Sort_csv(parentDir, folder_name1);
 Combine_Sort_csv(parentDir, folder_name2);
 
+%% Circadian Analysis
+datafile300 = 'Gunnar_240606_Videos_Most_combined_data.csv';
+datafile1000 = 'Gunnar_240614_Videos_Most_combined_data.csv';
+
+AnalyzeCircadianRunning(datafile300, true, 'Gunnar300Lux')
+AnalyzeCircadianRunning(datafile1000, true, 'Gunnar1000Lux')
 %% 300 vs 1000 Lux
 % Define datafile paths
 datafile300 = 'Gunnar_240606_Videos_Most_combined_data.csv';

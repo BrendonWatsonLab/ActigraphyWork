@@ -8,6 +8,11 @@ parentDir = '/Users/noahmuscat/Desktop/Actigraphy Stuff/data';
 folder_name = 'Rollo220131';
 % combines and sorts the csv files
 Combine_Sort_csv(parentDir, folder_name);
+
+%% Circadian Analysis
+datafile300 = 'Most_Movement_Data_combined_data.csv'; % weird name ik, still different from Canute's
+
+AnalyzeCircadianRunning(datafile300, true, 'Rollo300Lux')
 %% Per Day Analysis
 make_ZT_bool = true;
 Per_Day_Analysis('Most_Movement_Data_combined_data.csv','Most Movement', 'Rollo',make_ZT_bool)
