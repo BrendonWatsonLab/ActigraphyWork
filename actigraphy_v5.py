@@ -491,7 +491,7 @@ class ActigraphyProcessor:
         # Calculate the sum of the filtered mask to get the count of selected pixels
         selected_pixel_diff = np.sum(filtered_mask)
 
-        print(f"RMSE: {rmse}, Raw Diff: {raw_diff}, Selected Pixels: {selected_pixel_diff}")
+        #print(f"RMSE: {rmse}, Raw Diff: {raw_diff}, Selected Pixels: {selected_pixel_diff}")
 
         return raw_diff, rmse, selected_pixel_diff
 
