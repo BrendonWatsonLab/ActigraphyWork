@@ -3,7 +3,7 @@
 ratIDs = {'Rollo', 'Canute', 'Harald', 'Gunnar', 'Egil', 'Sigurd', 'Olaf'}; % Add more rat IDs as needed
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 
-dataDir = '/home/noahmu/Documents/JeremyData';
+dataDir = '/home/noahmu/Documents/JeremyData/ZT';
 % Initialize variables to hold combined data for baseline-normalized z-scores
 baselineNormalized300Lux = [];
 baselineNormalized1000Lux1 = [];
