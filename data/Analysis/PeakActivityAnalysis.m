@@ -174,47 +174,81 @@ outputFile = fullfile(rootFolder, 'Combined_Normalized_Data.csv');
 writetable(combined_data, outputFile);
 fprintf('Combined normalized data saved to: %s\n', outputFile);
 
-%% Plotting
+%% Plotting and grouping
 
-% Load the combined CSV file
-fprintf('Loading combined data file...\n');
+% Define the root folder and file path
+rootFolder = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT';
 combinedFile = fullfile(rootFolder, 'Combined_Normalized_Data.csv');
-combined_data = readtable(combinedFile);
 
-% Convert 'Date' to datetime format if it's not already
-if ~isdatetime(combined_data.Date)
-    fprintf('Converting Date column to datetime format...\n');
-    combined_data.Date = datetime(combined_data.Date, 'InputFormat', 'yyyy-MM-dd');
-end
+% Load the combined data file in chunks to avoid memory overload
+fprintf('Loading combined data file in chunks...\n');
 
-% Calculate the relative day for each rat and condition
-fprintf('Calculating relative days for each rat and condition...\n');
-combined_data.RelativeDay = zeros(height(combined_data), 1);
+% Determine the chunk size (number of rows to read at a time)
+chunkSize = 1e6; % for example, 1 million rows at a time
 
-rats = unique(combined_data.Rat);
-conditions = unique(combined_data.Condition);
+% Get the variable names and types from the file
+opts = detectImportOptions(combinedFile, 'NumRows', 1);
+varNames = opts.VariableNames;
+varTypes = opts.VariableTypes;
 
-for r = 1:length(rats)
-    rat = rats{r};
-    for c = 1:length(conditions)
-        condition = conditions{c};
-        
-        ratConditionData = combined_data(strcmp(combined_data.Rat, rat) & strcmp(combined_data.Condition, condition), :);
-        
-        if isempty(ratConditionData)
-            continue; % Skip if there is no data for this rat and condition
+% Process file in chunks
+combined_data = table();  % Initialize an empty table to store combined data
+
+fid = fopen(combinedFile);
+header = fgetl(fid);  % Read and ignore the header line
+
+while ~feof(fid)
+    fprintf('Reading chunk of data...\n');
+    dataArray = textscan(fid, repmat('%s', 1, numel(varNames)), chunkSize, 'Delimiter', ',', 'HeaderLines', 0);
+    
+    % Convert to table
+    chunk_data = table();
+    for i = 1:numel(varNames)
+        if strcmp(varTypes{i}, 'double')
+            chunk_data.(varNames{i}) = str2double(dataArray{i});
+        else
+            chunk_data.(varNames{i}) = dataArray{i};
         end
-        
-        % Find the earliest date for this rat and condition
-        minDate = min(ratConditionData.Date);
-        
-        % Calculate relative days
-        for d = 1:height(ratConditionData)
-            dateDiff = days(ratConditionData.Date(d) - minDate) + 1;
-            combined_data.RelativeDay(strcmp(combined_data.Rat, rat) & strcmp(combined_data.Condition, condition) & (combined_data.Date == ratConditionData.Date(d))) = dateDiff;
+    end
+    
+    % Convert dates if necessary
+    if ~isdatetime(chunk_data.Date)
+        fprintf('Converting Date column to datetime format in the current chunk...\n');
+        chunk_data.Date = datetime(chunk_data.Date, 'InputFormat', 'yyyy-MM-dd');
+    end
+    
+    % Append chunk to combined_data
+    combined_data = [combined_data; chunk_data]; %#ok<AGROW>
+    
+    % Calculate the relative day for each rat and condition in this chunk
+    fprintf('Calculating relative days for each rat and condition in the current chunk...\n');
+    rats = unique(combined_data.Rat);
+    conditions = unique(combined_data.Condition);
+
+    for r = 1:length(rats)
+        rat = rats{r};
+        for c = 1:length(conditions)
+            condition = conditions{c};
+
+            ratConditionData = combined_data(strcmp(combined_data.Rat, rat) & strcmp(combined_data.Condition, condition), :);
+
+            if isempty(ratConditionData)
+                continue; % Skip if there is no data for this rat and condition
+            end
+
+            % Find the earliest date for this rat and condition
+            minDate = min(ratConditionData.Date);
+
+            % Calculate relative days
+            for d = 1:height(ratConditionData)
+                dateDiff = days(ratConditionData.Date(d) - minDate) + 1;
+                combined_data.RelativeDay(strcmp(combined_data.Rat, rat) & strcmp(combined_data.Condition, condition) & (combined_data.Date == ratConditionData.Date(d))) = dateDiff;
+            end
         end
     end
 end
+
+fclose(fid);
 
 % Save the modified data with RelativeDay to a new CSV file
 outputModifiedFile = fullfile(rootFolder, 'Combined_Normalized_Data_With_RelativeDays.csv');
@@ -230,18 +264,18 @@ for c = 1:length(conditions)
     condition = conditions{c};
     for day = 1:7 % Maximum of 7 days per condition
         dayData = combined_data(strcmp(combined_data.Condition, condition) & combined_data.RelativeDay == day, :);
-        
+
         if isempty(dayData)
             continue; % Skip if there is no data for this day and condition
         end
-        
+
         meanNormalizedActivity = mean(dayData.NormalizedActivity);
         stdError = std(dayData.NormalizedActivity) / sqrt(height(dayData));
-        
+
         % Append to result arrays
         allData = [allData; {condition, day, meanNormalizedActivity, stdError}];
         conditionDayLabels = [conditionDayLabels; sprintf('%s Day %d', condition, day)];
-        
+
         fprintf('  Condition: %s, Day: %d, MeanNormalizedActivity: %.2f, StdError: %.2f\n', ...
                 condition, day, meanNormalizedActivity, stdError);
     end
@@ -262,13 +296,13 @@ colors = {'b', 'r', 'g'}; % Different colors for different conditions
 
 for conditionIndex = 1:length(conditions)
     condition = conditions{conditionIndex};
-    
+
     % Filter data by condition
     conditionData = allDataTable(strcmp(allDataTable.Condition, condition), :);
-    
+
     % Determine x positions based on the sequential days across all conditions
     conditionDayIndices = find(strcmp(conditionDayLabels, conditionData.Condition));
-    
+
     % Plot with error bars
     errorbar(conditionDayIndices, conditionData.MeanNormalizedActivity, conditionData.StdError, ...
              'DisplayName', condition, 'Color', colors{conditionIndex}, 'LineWidth', 1.5);
