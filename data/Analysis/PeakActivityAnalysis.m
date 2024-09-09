@@ -1,3 +1,4 @@
+%% Overall analysis of circadian 24 hour activity
 % List of rat IDs and conditions
 ratIDs = {'Rollo', 'Canute', 'Harald', 'Gunnar', 'Egil', 'Sigurd', 'Olaf'}; % Add more rat IDs as needed
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
@@ -174,8 +175,8 @@ outputFile = fullfile(rootFolder, 'Combined_Normalized_Data.csv');
 writetable(combined_data, outputFile);
 fprintf('Combined normalized data saved to: %s\n', outputFile);
 
-%% Plotting and grouping
-rootFolder = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT';
+%% Grouping Data by Relative Day
+rootFolder = '/home/noahmu/Documents/JeremyData/ZT';
 
 % Load the combined CSV file
 fprintf('Loading combined data file...\n');
@@ -185,7 +186,7 @@ combined_data = readtable(combinedFile);
 % Convert 'Date' to datetime format if it's not already
 if ~isdatetime(combined_data.Date)
     fprintf('Converting Date column to datetime format...\n');
-    combined_data.Date = datetime(combined_data.Date, 'InputFormat', 'yyyy-MM-dd');
+    combined_data.Date = datetime(combined_data.Date, 'InputFormat', 'yyyy-MM-dd HH:mm:ss.SS');
 end
 
 % Calculate the relative day for each rat and condition
@@ -197,12 +198,15 @@ conditions = unique(combined_data.Condition);
 
 for r = 1:length(rats)
     rat = rats{r};
+    disp(['Analyzing rat: ', rat]); % Print the current rat being analyzed
     for c = 1:length(conditions)
         condition = conditions{c};
+        disp(['  Analyzing condition: ', condition]); % Print the current condition being analyzed
         
         ratConditionData = combined_data(strcmp(combined_data.Rat, rat) & strcmp(combined_data.Condition, condition), :);
         
         if isempty(ratConditionData)
+            disp('    No data available for this rat and condition. Skipping...'); % Inform about skipping
             continue; % Skip if there is no data for this rat and condition
         end
         
@@ -210,22 +214,28 @@ for r = 1:length(rats)
         minDate = min(ratConditionData.Date);
         
         % Calculate relative days
-        for d = 1:height(ratConditionData)
-            dateDiff = days(ratConditionData.Date(d) - minDate) + 1;
-            combined_data.RelativeDay(strcmp(combined_data.Rat, rat) & strcmp(combined_data.Condition, condition) & (combined_data.Date == ratConditionData.Date(d))) = dateDiff;
-        end
+        relativeDays = days(ratConditionData.Date - minDate) + 1;
+        
+        % Update the combined_data 'RelativeDay' column
+        indices = strcmp(combined_data.Rat, rat) & strcmp(combined_data.Condition, condition);
+        combined_data.RelativeDay(indices) = relativeDays;
+        
+        disp('    Completed relative day calculation for this condition.'); % Inform about the completion of this condition analysis
     end
 end
+
+
 
 % Save the modified data with RelativeDay to a new CSV file
 outputModifiedFile = fullfile(rootFolder, 'Combined_Normalized_Data_With_RelativeDays.csv');
 fprintf('Saving the modified data with RelativeDay to: %s\n', outputModifiedFile);
 writetable(combined_data, outputModifiedFile);
 
+%% Plotting
 % Now, aggregate and average the data by relative day and condition
 fprintf('Aggregating and averaging data by relative day and condition...\n');
-allData = [];
-conditionDayLabels = [];
+allData = {};
+conditionDayLabels = {};
 
 for c = 1:length(conditions)
     condition = conditions{c};
@@ -241,50 +251,76 @@ for c = 1:length(conditions)
         
         % Append to result arrays
         allData = [allData; {condition, day, meanNormalizedActivity, stdError}];
-        conditionDayLabels = [conditionDayLabels; sprintf('%s Day %d', condition, day)];
-        
-        fprintf('  Condition: %s, Day: %d, MeanNormalizedActivity: %.2f, StdError: %.2f\n', ...
-                condition, day, meanNormalizedActivity, stdError);
     end
 end
 
 % Convert to table for easier plotting
 allDataTable = cell2table(allData, 'VariableNames', {'Condition', 'Day', 'MeanNormalizedActivity', 'StdError'});
+data = allDataTable;
 
-% Prepare x-axis labels
-xAxisLabels = unique(conditionDayLabels, 'stable');
+conditions = {'300Lux', '1000Lux1', '1000Lux4'};
+day_range = 1:7;
 
-% Plotting
-fprintf('Generating plot...\n');
-figure;
-hold on;
+% Initialize arrays for plot data
+mean_activity = [];
+std_error = [];
+x_ticks = {};
+x_tick_labels = {};
 
-colors = {'b', 'r', 'g'}; % Different colors for different conditions
-
-for conditionIndex = 1:length(conditions)
-    condition = conditions{conditionIndex};
-    
-    % Filter data by condition
-    conditionData = allDataTable(strcmp(allDataTable.Condition, condition), :);
-    
-    % Determine x positions based on the sequential days across all conditions
-    conditionDayIndices = find(strcmp(conditionDayLabels, conditionData.Condition));
-    
-    % Plot with error bars
-    errorbar(conditionDayIndices, conditionData.MeanNormalizedActivity, conditionData.StdError, ...
-             'DisplayName', condition, 'Color', colors{conditionIndex}, 'LineWidth', 1.5);
+for c = 1:length(conditions)
+    condition = conditions{c};
+    for d = day_range
+        % Filter the table for the current condition and day
+        idx = strcmp(data.Condition, condition) & data.Day == d;
+        mean_activity = [mean_activity; data.MeanNormalizedActivity(idx)];
+        std_error = [std_error; data.StdError(idx)];
+        x_ticks = [x_ticks; sprintf('%s Day %d', condition, d)];
+        
+        % Short x-tick label for plotting (Just the days)
+        x_tick_labels = [x_tick_labels; num2str(d)];
+    end
 end
 
-% Customize plot
-set(gca, 'XTick', 1:length(xAxisLabels), 'XTickLabel', xAxisLabels);
-xlabel('Day and Condition');
-ylabel('Mean Normalized Activity');
-title('Mean Normalized Activity with Error Bars by Day and Condition');
-legend('Location', 'Best');
-grid on;
+% Create the x-axis values
+x_values = 1:length(mean_activity);
+
+% Plotting
+figure;
+hold on;
+errorbar(x_values, mean_activity, std_error, 'o-', 'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', 'b');
 hold off;
 
-fprintf('Plot generated successfully.\n');
+% Setting the sectioned x-axis
+set(gca, 'XTick', x_values);
+set(gca, 'XTickLabel', x_tick_labels);
+
+% Adding section dividers and labels
+hold on;
+section_boundaries = [7.5, 14.5]; % Middle points between day groups
+for b = section_boundaries
+    plot([b b], ylim, 'k--');
+end
+
+% Adding section titles
+text(3.5, max(mean_activity)*1.05, '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+text(10.5, max(mean_activity)*1.05, '1000Lux1', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+text(17.5, max(mean_activity)*1.05, '1000Lux4', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+
+% Labels and title
+xlabel('Day');
+ylabel('Mean Normalized Activity');
+title('Activity Under Different Lighting Conditions');
+xlim([0, length(x_values)+1]);
+
+% Improving Visibility
+xticks = 1:21;
+xtick_labels_formated = repmat(1:7, 1, 3);
+set(gca, 'XTick', xticks);
+set(gca, 'XTickLabel', xtick_labels_formated)
+
+% Improving visibility and aesthetics
+grid on;
+hold off;
 
 %% Function to normalize data
 function normalizedValues = normalizeData(data, mean_300lux, std_300lux)
