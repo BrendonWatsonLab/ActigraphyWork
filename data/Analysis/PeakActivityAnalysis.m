@@ -106,153 +106,184 @@ saveas(gcf, fullfile(dataDir, 'Normalized_Activity_Per_Hour.png'));
 disp('Z-score normalized activity analysis and plots generated and saved.');
 
 %% Using 7-day 300 Lux Normalization to generate new csv
-rootFolder = '/home/noahmu/Documents/JeremyData/ZT';
-% Define folder structure
-lightingConditions = {'300Lux', '1000LuxWeek1', '1000LuxWeek4'};
-validFieldNames = {'Lux300', 'Lux1000Week1', 'Lux1000Week4'};
+rootFolder = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT';
 
-% Initialize a table to store all the normalized data across all animals
-combinedNormalizedData = table();
+rats = {'Rollo', 'Canute', 'Egil', 'Olaf', 'Harald', 'Gunnar', 'Sigurd'};
+conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 
-% Iterate over each animal's folder
-animalFolders = dir(rootFolder);
-for i = 1:length(animalFolders)
-    if animalFolders(i).isdir && ~strcmp(animalFolders(i).name, '.') && ~strcmp(animalFolders(i).name, '..')
-        animalPath = fullfile(rootFolder, animalFolders(i).name);
-        files = dir(fullfile(animalPath, '*.csv'));
-        dataByCondition = struct();
+% Initialize a table to store the combined normalized data with predefined column names
+combined_data = table('Size', [0, 5], ...
+                      'VariableTypes', {'double', 'double', 'cell', 'cell', 'datetime'}, ...
+                      'VariableNames', {'SelectedPixelDifference', 'NormalizedActivity', 'Rat', 'Condition', 'Date'});
+
+for r = 1:length(rats)
+    rat = rats{r};
+    ratFolder = fullfile(rootFolder, rat);
+    
+    fprintf('Processing data for rat: %s\n', rat);
+    
+    % Initialize variables to store 300Lux data for this rat
+    selectedPixelDiff_300Lux = [];
+    
+    % Load the 300Lux data first to compute mean and std
+    file_300Lux = fullfile(ratFolder, [rat '_300Lux_ZT.csv']);
+    if ~isfile(file_300Lux)
+        fprintf('300Lux data file not found for rat: %s. Skipping this rat.\n', rat);
+        continue;  % Skip this rat if the 300Lux file does not exist
+    end
+    fprintf('Loading 300Lux data from: %s\n', file_300Lux);
+    ratData_300Lux = readtable(file_300Lux);
+    selectedPixelDiff_300Lux = ratData_300Lux.SelectedPixelDifference;
+    
+    % Calculate mean and std for 300Lux condition
+    mean_300Lux = mean(selectedPixelDiff_300Lux);
+    std_300Lux = std(selectedPixelDiff_300Lux);
+    fprintf('Calculated mean = %.2f, std = %.2f for 300Lux condition of rat: %s\n', mean_300Lux, std_300Lux, rat);
+    
+    % Now normalize and combine all conditions for this rat
+    for c = 1:length(conditions)
+        condition = conditions{c};
+        file_condition = fullfile(ratFolder, [rat '_' condition '_ZT.csv']);
         
-        % Load all CSV files for the current animal
-        for j = 1:length(files)
-            filePath = fullfile(animalPath, files(j).name);
-            data = readtable(filePath);
-            
-            % Extract the lighting condition from the file name
-            for k = 1:length(lightingConditions)
-                if contains(lower(files(j).name), lower(lightingConditions{k}))
-                    dataByCondition.(validFieldNames{k}) = data;
-                    break;
-                end
-            end
+        if ~isfile(file_condition)
+            fprintf('%s data file not found for rat: %s. Skipping this condition.\n', condition, rat);
+            continue;  % Skip this condition if the file does not exist
         end
         
-        % Normalize data based on the 300 lux condition
-        if isfield(dataByCondition, 'Lux300')
-            avg_300lux = dataByCondition.('Lux300').SelectedPixelDifference;
-            mean_300lux = mean(avg_300lux);
-            std_300lux = std(avg_300lux);
-            
-            animalNormalizedData = table();
-            conditions = fieldnames(dataByCondition);
-            for k = 1:length(conditions)
-                dataByCondition.(conditions{k}).NormalizedSelectedPixelDifference = normalizeData(...
-                    dataByCondition.(conditions{k}).SelectedPixelDifference, mean_300lux, std_300lux ...
-                );
-                dataByCondition.(conditions{k}).Animal = repmat({animalFolders(i).name}, height(dataByCondition.(conditions{k})), 1);
-                dataByCondition.(conditions{k}).Condition = repmat(lightingConditions{k}, height(dataByCondition.(conditions{k})), 1);
-                
-                % Store normalized data for the current animal
-                animalNormalizedData = [animalNormalizedData; dataByCondition.(conditions{k})(:, {'Date', 'NormalizedSelectedPixelDifference', 'Animal', 'Condition'})]; %#ok<AGROW>
-            end
-            
-            % Export normalized data for the current animal to CSV
-            writetable(animalNormalizedData, fullfile(animalPath, 'normalized_data.csv'));
-            
-            % Append current animal's data to the combined table
-            combinedNormalizedData = [combinedNormalizedData; animalNormalizedData]; %#ok<AGROW>
-        end
+        fprintf('Loading %s data from: %s\n', condition, file_condition);
+        ratData_condition = readtable(file_condition);
+        
+        % Normalize the SelectedPixelDifference column using the 300Lux mean and std
+        ratData_condition.NormalizedActivity = (ratData_condition.SelectedPixelDifference - mean_300Lux) / std_300Lux;
+        fprintf('Normalized %s data for rat: %s\n', condition, rat);
+        
+        % Add columns for rat name and condition
+        ratData_condition.Rat = repmat({rat}, height(ratData_condition), 1);
+        ratData_condition.Condition = repmat({condition}, height(ratData_condition), 1);
+        
+        % Ensure the table has correct columns before concatenation
+        ratData_condition = ratData_condition(:, {'SelectedPixelDifference', 'NormalizedActivity', 'Rat', 'Condition', 'Date'});
+        
+        % Append to the combined data table
+        combined_data = [combined_data; ratData_condition]; %#ok<AGROW>
     end
 end
 
-writetable(combinedNormalizedData, fullfile(rootFolder, 'total_normalized_data.csv'));
+% Output the combined normalized data to a CSV file
+outputFile = fullfile(rootFolder, 'Combined_Normalized_Data.csv');
+writetable(combined_data, outputFile);
+fprintf('Combined normalized data saved to: %s\n', outputFile);
 
 %% Plotting
-% Loading and Preprocessing Data
-disp('Loading data...');
-data = readtable('total_normalized_data.csv'); % replace 'yourfile.csv' with the actual file name
 
-disp('Ensuring Date column is in datetime format...');
-% Ensure the 'Date' column is in datetime format and extract the date part
-data.Date = datetime(data.Date, 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss.SSS');
+% Load the combined CSV file
+fprintf('Loading combined data file...\n');
+combinedFile = fullfile(rootFolder, 'Combined_Normalized_Data.csv');
+combined_data = readtable(combinedFile);
 
-disp('Extracting date part and ignoring the time...');
-% Extract only the date part (ignoring the time)
-data.DateOnly = dateshift(data.Date, 'start', 'day');
+% Convert 'Date' to datetime format if it's not already
+if ~isdatetime(combined_data.Date)
+    fprintf('Converting Date column to datetime format...\n');
+    combined_data.Date = datetime(combined_data.Date, 'InputFormat', 'yyyy-MM-dd');
+end
 
-% Find unique conditions
-conditions = unique(data.Condition);
-numConditions = length(conditions);
+% Calculate the relative day for each rat and condition
+fprintf('Calculating relative days for each rat and condition...\n');
+combined_data.RelativeDay = zeros(height(combined_data), 1);
 
-% Initialize a new table to store processed data
-processedData = data;
-processedData.Day = zeros(height(data), 1); % Initialize the 'Day' column to zero
+rats = unique(combined_data.Rat);
+conditions = unique(combined_data.Condition);
 
-% Print update
-fprintf('Processing each condition (Total conditions: %d)...\n', numConditions);
-
-% Processing Each Condition Separately to Update Day Column
-for i = 1:numConditions
-    condition = conditions{i};
-    fprintf('Processing condition %d/%d: %s\n', i, numConditions, condition);
-    
-    conditionIdx = strcmp(data.Condition, condition);
-    
-    % Find the unique dates for this condition
-    uniqueDates = unique(data.DateOnly(conditionIdx));
-    numDates = length(uniqueDates);
-    
-    % Map the original days to a sequential day for this condition
-    dayMap = containers.Map(cellstr(uniqueDates), 1:numDates);
-    
-    % Update the Day column in the processed data table
-    for j = 1:numDates
-        dateKey = char(uniqueDates(j));
-        dateIdx = strcmp(cellstr(data.DateOnly), dateKey) & conditionIdx;
-        processedData.Day(dateIdx) = dayMap(dateKey);
+for r = 1:length(rats)
+    rat = rats{r};
+    for c = 1:length(conditions)
+        condition = conditions{c};
+        
+        ratConditionData = combined_data(strcmp(combined_data.Rat, rat) & strcmp(combined_data.Condition, condition), :);
+        
+        if isempty(ratConditionData)
+            continue; % Skip if there is no data for this rat and condition
+        end
+        
+        % Find the earliest date for this rat and condition
+        minDate = min(ratConditionData.Date);
+        
+        % Calculate relative days
+        for d = 1:height(ratConditionData)
+            dateDiff = days(ratConditionData.Date(d) - minDate) + 1;
+            combined_data.RelativeDay(strcmp(combined_data.Rat, rat) & strcmp(combined_data.Condition, condition) & (combined_data.Date == ratConditionData.Date(d))) = dateDiff;
+        end
     end
 end
 
-disp('Saving processed data to CSV...');
-writetable(processedData, fullfile('/home/noahmu/Documents/JeremyData/ZT', 'daily_processed_combined_data.csv'));
+% Save the modified data with RelativeDay to a new CSV file
+outputModifiedFile = fullfile(rootFolder, 'Combined_Normalized_Data_With_RelativeDays.csv');
+fprintf('Saving the modified data with RelativeDay to: %s\n', outputModifiedFile);
+writetable(combined_data, outputModifiedFile);
 
-% Calculating Averages
-disp('Calculating averages...');
-% Calculate the average NormalizedSelectedPixelDifference for each condition and day
-avgData = varfun(@mean, processedData, 'InputVariables', 'NormalizedSelectedPixelDifference', ...
-    'GroupingVariables', {'Condition', 'Day'});
+% Now, aggregate and average the data by relative day and condition
+fprintf('Aggregating and averaging data by relative day and condition...\n');
+allData = [];
+conditionDayLabels = [];
 
-disp('Preparing data for plotting...');
-% Convert the result to a format suitable for plotting
-conditions = unique(avgData.Condition);
-colors = lines(length(conditions)); % Different colors for each condition for better visualization
+for c = 1:length(conditions)
+    condition = conditions{c};
+    for day = 1:7 % Maximum of 7 days per condition
+        dayData = combined_data(strcmp(combined_data.Condition, condition) & combined_data.RelativeDay == day, :);
+        
+        if isempty(dayData)
+            continue; % Skip if there is no data for this day and condition
+        end
+        
+        meanNormalizedActivity = mean(dayData.NormalizedActivity);
+        stdError = std(dayData.NormalizedActivity) / sqrt(height(dayData));
+        
+        % Append to result arrays
+        allData = [allData; {condition, day, meanNormalizedActivity, stdError}];
+        conditionDayLabels = [conditionDayLabels; sprintf('%s Day %d', condition, day)];
+        
+        fprintf('  Condition: %s, Day: %d, MeanNormalizedActivity: %.2f, StdError: %.2f\n', ...
+                condition, day, meanNormalizedActivity, stdError);
+    end
+end
 
+% Convert to table for easier plotting
+allDataTable = cell2table(allData, 'VariableNames', {'Condition', 'Day', 'MeanNormalizedActivity', 'StdError'});
+
+% Prepare x-axis labels
+xAxisLabels = unique(conditionDayLabels, 'stable');
+
+% Plotting
+fprintf('Generating plot...\n');
 figure;
 hold on;
 
-% Print update
-fprintf('Plotting data for each condition...\n');
+colors = {'b', 'r', 'g'}; % Different colors for different conditions
 
-% Plot data for each condition
-for i = 1:length(conditions)
-    condition = conditions{i};
-    conditionData = avgData(strcmp(avgData.Condition, condition), :);
-    plot(conditionData.Day, conditionData.mean_NormalizedSelectedPixelDifference, ...
-        '-o', 'DisplayName', condition, 'Color', colors(i, :));
+for conditionIndex = 1:length(conditions)
+    condition = conditions{conditionIndex};
+    
+    % Filter data by condition
+    conditionData = allDataTable(strcmp(allDataTable.Condition, condition), :);
+    
+    % Determine x positions based on the sequential days across all conditions
+    conditionDayIndices = find(strcmp(conditionDayLabels, conditionData.Condition));
+    
+    % Plot with error bars
+    errorbar(conditionDayIndices, conditionData.MeanNormalizedActivity, conditionData.StdError, ...
+             'DisplayName', condition, 'Color', colors{conditionIndex}, 'LineWidth', 1.5);
 end
 
-% Customizing the Plot
-disp('Customizing the plot...');
-xlabel('Day');
-ylabel('Average Normalized Selected Pixel Difference');
-title('Average Normalized Selected Pixel Difference by Lighting Condition and Day');
-legend('show');
+% Customize plot
+set(gca, 'XTick', 1:length(xAxisLabels), 'XTickLabel', xAxisLabels);
+xlabel('Day and Condition');
+ylabel('Mean Normalized Activity');
+title('Mean Normalized Activity with Error Bars by Day and Condition');
+legend('Location', 'Best');
 grid on;
 hold off;
 
-disp('Finished!');
-
-%% testing
-datatatata = readtable('total_normalized_data.csv');
+fprintf('Plot generated successfully.\n');
 
 %% Function to normalize data
 function normalizedValues = normalizeData(data, mean_300lux, std_300lux)
