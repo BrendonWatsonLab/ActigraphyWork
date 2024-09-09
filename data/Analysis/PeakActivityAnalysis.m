@@ -232,10 +232,16 @@ fprintf('Saving the modified data with RelativeDay to: %s\n', outputModifiedFile
 writetable(combined_data, outputModifiedFile);
 
 %% Plotting
+fprintf('Reading in table');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT/Combined_Normalized_Data_With_RelativeDays.csv');
+%% without reading table
+conditions = {'300Lux', '1000Lux1', '1000Lux4'};
+day_range = 1:7;
 % Now, aggregate and average the data by relative day and condition
 fprintf('Aggregating and averaging data by relative day and condition...\n');
 allData = {};
 conditionDayLabels = {};
+colors = {'b', 'r', 'k'}; % Colors for each condition
 
 for c = 1:length(conditions)
     condition = conditions{c};
@@ -258,68 +264,71 @@ end
 allDataTable = cell2table(allData, 'VariableNames', {'Condition', 'Day', 'MeanNormalizedActivity', 'StdError'});
 data = allDataTable;
 
-conditions = {'300Lux', '1000Lux1', '1000Lux4'};
-day_range = 1:7;
-
 % Initialize arrays for plot data
 mean_activity = [];
 std_error = [];
 x_ticks = {};
 x_tick_labels = {};
 
+h = []; % Array to store plot handles for legend
+
+figure;
+hold on;
+
 for c = 1:length(conditions)
     condition = conditions{c};
+    color = colors{c};
+    condition_mean_activity = [];
+    condition_std_error = [];
+    
     for d = day_range
         % Filter the table for the current condition and day
         idx = strcmp(data.Condition, condition) & data.Day == d;
-        mean_activity = [mean_activity; data.MeanNormalizedActivity(idx)];
-        std_error = [std_error; data.StdError(idx)];
+        condition_mean_activity = [condition_mean_activity; data.MeanNormalizedActivity(idx)];
+        condition_std_error = [condition_std_error; data.StdError(idx)];
         x_ticks = [x_ticks; sprintf('%s Day %d', condition, d)];
         
         % Short x-tick label for plotting (Just the days)
         x_tick_labels = [x_tick_labels; num2str(d)];
     end
+    
+    % Create the x-axis values specific to each condition
+    x_values = (c-1)*7 + (1:length(condition_mean_activity));
+    
+    % Plotting with color for the condition
+    h(end+1) = errorbar(x_values, condition_mean_activity, condition_std_error, 'o-', 'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', color, 'Color', color);
+    
+    % Append results to overall arrays
+    mean_activity = [mean_activity; condition_mean_activity];
+    std_error = [std_error; condition_std_error];
 end
 
-% Create the x-axis values
-x_values = 1:length(mean_activity);
-
-% Plotting
-figure;
-hold on;
-errorbar(x_values, mean_activity, std_error, 'o-', 'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', 'b');
 hold off;
 
 % Setting the sectioned x-axis
-set(gca, 'XTick', x_values);
+set(gca, 'XTick', 1:length(mean_activity));
 set(gca, 'XTickLabel', x_tick_labels);
 
-% Adding section dividers and labels
+% Adding section dividers and labels below the graph
 hold on;
 section_boundaries = [7.5, 14.5]; % Middle points between day groups
 for b = section_boundaries
     plot([b b], ylim, 'k--');
 end
 
-% Adding section titles
-text(3.5, max(mean_activity)*1.05, '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-text(10.5, max(mean_activity)*1.05, '1000Lux1', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-text(17.5, max(mean_activity)*1.05, '1000Lux4', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+% Add custom x-axis labels below the graph
+text(3.5, min(ylim)-0.05*range(ylim), '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+text(10.5, min(ylim)-0.05*range(ylim), '1000Lux1', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+text(17.5, min(ylim)-0.05*range(ylim), '1000Lux4', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
 
 % Labels and title
-xlabel('Day');
 ylabel('Mean Normalized Activity');
 title('Activity Under Different Lighting Conditions');
-xlim([0, length(x_values)+1]);
+xlim([0, length(mean_activity)+1]);
 
-% Improving Visibility
-xticks = 1:21;
-xtick_labels_formated = repmat(1:7, 1, 3);
-set(gca, 'XTick', xticks);
-set(gca, 'XTickLabel', xtick_labels_formated)
-
-% Improving visibility and aesthetics
+% Improving Visibility and Aesthetics
 grid on;
+legend(h, conditions, 'Location', 'Best');
 hold off;
 
 %% Function to normalize data
