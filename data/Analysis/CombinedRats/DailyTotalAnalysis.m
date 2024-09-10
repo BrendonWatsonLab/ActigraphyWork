@@ -15,11 +15,10 @@ dataNormalized = Normalizer(rootFolder, rats, conditions);
 dataNormalizedRelativeDays = RelativeDayCalculator(rootFolder);
 
 %% Plotting
-fprintf('Reading in table');
+%fprintf('Reading in table');
 
-% reads in data from .csv, can also use dataNormalizedRelativeDays from
-% above
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT/Combined_Normalized_Data_With_RelativeDays.csv');
+% reads in data from .csv
+%combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT/Combined_Normalized_Data_With_RelativeDays.csv');
 
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 day_range = 1:7;
@@ -32,7 +31,9 @@ colors = {'b', 'r', 'k'}; % Colors for each condition
 for c = 1:length(conditions)
     condition = conditions{c};
     for day = 1:7 % Maximum of 7 days per condition
-        dayData = combined_data(strcmp(combined_data.Condition, condition) & combined_data.RelativeDay == day, :);
+        dayData = combined_data(strcmp(combined_data.Condition, condition) & ...
+                                combined_data.RelativeDay >= day & ...
+                                combined_data.RelativeDay < day+1, :);
         
         if isempty(dayData)
             continue; % Skip if there is no data for this day and condition
@@ -81,8 +82,9 @@ for c = 1:length(conditions)
     % Create the x-axis values specific to each condition
     x_values = (c-1)*7 + (1:length(condition_mean_activity));
     
-    % Plotting with color for the condition
-    h(end+1) = errorbar(x_values, condition_mean_activity, condition_std_error, 'o-', 'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', color, 'Color', color);
+    % Plotting with color for the condition and adding error bars
+    h(end+1) = errorbar(x_values, condition_mean_activity, condition_std_error, 'o-', ...
+                        'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', color, 'Color', color);
     
     % Append results to overall arrays
     mean_activity = [mean_activity; condition_mean_activity];

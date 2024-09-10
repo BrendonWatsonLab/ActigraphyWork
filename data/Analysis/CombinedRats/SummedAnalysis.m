@@ -5,7 +5,7 @@ conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 
 dataDir = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT';
 
-Normalizer(dataDir, ratIDs, conditions);
+combinedData = Normalizer(dataDir, ratIDs, conditions);
 
 %% Plotting
 % List of conditions for plotting
