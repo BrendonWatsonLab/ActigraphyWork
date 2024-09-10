@@ -3,90 +3,9 @@
 ratIDs = {'Rollo', 'Canute', 'Harald', 'Gunnar', 'Egil', 'Sigurd', 'Olaf'}; % Add more rat IDs as needed
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 
-dataDir = '/home/noahmu/Documents/JeremyData/ZT';
-% Initialize variables to hold combined data for baseline-normalized z-scores
-baselineNormalized300Lux = [];
-baselineNormalized1000Lux1 = [];
-baselineNormalized1000Lux4 = [];
+dataDir = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT';
 
-animalID = [];
-conditionID = [];
-movementData = [];
-
-% Loop over each rat and normalize to the 300 Lux condition
-for i = 1:length(ratIDs)
-    ratID = ratIDs{i};
-    
-    % Load 300 Lux data (baseline)
-    baselineFilename = fullfile(dataDir, ratID, sprintf('%s_300Lux.csv', ratID));
-    if isfile(baselineFilename)
-        baselineTable = readtable(baselineFilename);
-        
-        if ismember('SelectedPixelDifference', baselineTable.Properties.VariableNames)
-            baselineData = baselineTable.SelectedPixelDifference;
-            baselineMean = mean(baselineData, 'omitnan');
-            baselineStd = std(baselineData, 'omitnan');
-
-            % Normalize each condition using the baseline mean and std
-            for j = 1:length(conditions)
-                condition = conditions{j};
-
-                % Construct the filename and full path
-                filename = sprintf('%s_%s.csv', ratID, condition);
-                fullPath = fullfile(dataDir, ratID, filename);
-
-                % Check if the file exists
-                if isfile(fullPath)
-                    % Load the data from the CSV file using readtable
-                    fprintf('Analyzing: %s\n', fullPath);
-                    dataTable = readtable(fullPath);
-                    
-                    % Check if the specified column exists
-                    if ismember('SelectedPixelDifference', dataTable.Properties.VariableNames)
-                        data = dataTable.SelectedPixelDifference;
-
-                        % Normalize the data to the 300 Lux baseline
-                        norm_data = (data - baselineMean) / baselineStd;
-
-                        % Append data with identifiers to the combined vectors
-                        animalID = [animalID; repmat({ratID}, length(norm_data), 1)];
-                        conditionID = [conditionID; repmat({condition}, length(norm_data), 1)];
-                        movementData = [movementData; norm_data];
-                    else
-                        fprintf('Column "SelectedPixelDifference" not found in file: %s\n', fullPath);
-                    end
-                else
-                    fprintf('File not found: %s\n', fullPath);  % Log missing files
-                end
-            end
-        else
-            fprintf('Column "SelectedPixelDifference" not found in baseline file: %s\n', baselineFilename);
-        end
-    else
-        fprintf('Baseline file not found: %s\n', baselineFilename);
-    end
-end
-
-% Create a table to combine data from all conditions and animals
-combinedData = table(animalID, conditionID, movementData, ...
-                     'VariableNames', {'Animal', 'Condition', 'SelectedPixelDiff'});
-
-% Define the directory where to save the combined CSV file
-saveDir = '/home/noahmu/Documents/JeremyData'; % <-- Change this to your desired path
-
-% Ensure the directory exists (create if it does not exist)
-if ~exist(saveDir, 'dir')
-    mkdir(saveDir);
-end
-
-% Define the filename and combine it with the save path
-combinedFilename = 'combined_normalized_data.csv';
-fullFilePath = fullfile(saveDir, combinedFilename);
-
-% Write the combined table to a CSV file
-writetable(combinedData, fullFilePath);
-
-disp(['Done normalizing and pooling the data. Combined data saved to ', fullFilePath]);
+Normalizer(dataDir, ratIDs, conditions);
 
 %% Plotting
 % List of conditions for plotting
