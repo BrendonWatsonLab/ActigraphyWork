@@ -8,7 +8,7 @@
 ratIDs = {'Rollo', 'Canute', 'Harald', 'Gunnar', 'Egil', 'Sigurd', 'Olaf'}; % Add more rat IDs as needed
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 
-dataDir = '/home/noahmu/Documents/JeremyData/ZT'; % Ensure this path is correct
+dataDir = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT';
 normalizedActivity = struct();
 
 % Normalize condition names to be valid field names
@@ -101,13 +101,13 @@ end
 
 
 xlabel('Hour of the Day');
-ylabel('Normalized Activity (z-score)');
-title('Z-score Normalized Activity Over 24 Hours for Each Animal and Condition');
+ylabel('Normalized Activity');
+title('Normalized Activity Over 24 Hours for All Rats');
 legend(legendEntries, 'Location', 'BestOutside');
 hold off;
 
 % Save the figure if necessary
-saveas(gcf, fullfile(dataDir, 'Normalized_Activity_Per_Hour.png'));
+%saveas(gcf, fullfile(dataDir, 'Normalized_Activity_Per_Hour.png'));
 
 disp('Z-score normalized activity analysis and plots generated and saved.');
 
