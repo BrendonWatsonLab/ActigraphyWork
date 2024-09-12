@@ -1,12 +1,17 @@
 function AnalyzeCircadianRunning(datafile, convert_ZT, name)
-    % Load and process data
-    data = readtable(datafile);
-    if convert_ZT
-        data = make_ZT(data, 5);
-    end
 
+    if ~istable(datafile)
+        
+        % Load and process data
+        datafile = readtable(datafile);
+        if convert_ZT
+            datafile = make_ZT(datafile, 5);
+        end
+    end
+    
+    
     % Calculate hourly means across the week
-    [hourlyMeans, hourlyBinTimes] = CalculateHourlyMeans(data);
+    [hourlyMeans, hourlyBinTimes] = CalculateHourlyMeans(datafile);
 
     % Extract ZT time from the hourly bins
     ZT_Time = mod(hour(hourlyBinTimes), 24);
