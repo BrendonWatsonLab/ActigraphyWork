@@ -14,11 +14,13 @@ dataNormalized = Normalizer(rootFolder, rats, conditions);
 % Adds the relative day to a new .csv (Day 1 of 300Lux, etc)
 dataNormalizedRelativeDays = RelativeDayCalculator(rootFolder);
 
+dataBinned = Binner(dataNormalizedRelativeDays, 5, false); % 5 = minutes to bin by, false = not a file path
+
 %% Plotting
 %fprintf('Reading in table');
 
 % reads in data from .csv
-%combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT/Combined_Normalized_Data_With_RelativeDays.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT/CombinedRelDaysBinned.csv');
 
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 day_range = 1:7;
