@@ -3,7 +3,7 @@
 ratIDs = {'Rollo', 'Canute', 'Harald', 'Gunnar', 'Egil', 'Sigurd', 'Olaf'}; % Add more rat IDs as needed
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 
-dataDir = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT';
+dataDir = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT/Combined_Normalized_Data.csv';
 
 combinedData = Normalizer(dataDir, ratIDs, conditions);
 
