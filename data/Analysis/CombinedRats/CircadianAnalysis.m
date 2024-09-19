@@ -55,7 +55,7 @@ hours = mean_300lux.Hour;
 figure;
 b1 = bar(hours, difference, 'BarWidth', 1);
 
-addShadedAreaToPlot24Hour();
+addShadedAreaToPlotZT24Hour();
 
 % Set plot title and labels
 title('Difference in NormalizedActivity: 1000 Lux Week4 - 300 Lux');
@@ -67,6 +67,60 @@ uistack(b1, 'top');
 
 % Display the figure
 grid on;
+
+%% Line Plots for Differences
+% Extract rows for the 300Lux and 1000Lux4 conditions
+% Extract rows for the 300Lux and 1000Lux4 conditions
+data_300lux = combined_data(strcmp(combined_data.Condition, '300Lux'), :);
+data_1000lux_week4 = combined_data(strcmp(combined_data.Condition, '1000Lux4'), :);
+
+% Create 'Hour' column for both subsets
+data_300lux.Hour = hour(data_300lux.Date);
+data_1000lux_week4.Hour = hour(data_1000lux_week4.Date);
+
+% Summarize 'SelectedPixelDifference' by 'Hour' for both subsets
+mean_300lux = groupsummary(data_300lux, 'Hour', 'mean', 'SelectedPixelDifference');
+mean_1000lux_week4 = groupsummary(data_1000lux_week4, 'Hour', 'mean', 'SelectedPixelDifference');
+
+% Ensure both tables are sorted by 'Hour'
+mean_300lux = sortrows(mean_300lux, 'Hour');
+mean_1000lux_week4 = sortrows(mean_1000lux_week4, 'Hour');
+
+% Calculate the difference: 1000Lux4 - 300Lux
+difference = mean_1000lux_week4.mean_SelectedPixelDifference - mean_300lux.mean_SelectedPixelDifference;
+
+% Prepare data for 24-hour plot
+hours = mean_300lux.Hour;
+
+% Create the plot
+figure;
+hold on;
+
+% Plot mean activity for 300Lux
+p1 = plot(hours, mean_300lux.mean_SelectedPixelDifference, '-o', 'DisplayName', '300 Lux', 'Color', 'b', 'LineWidth', 2);
+
+% Plot mean activity for 1000 Lux Week 4
+p2 = plot(hours, mean_1000lux_week4.mean_SelectedPixelDifference, '-s', 'DisplayName', '1000 Lux Week 4', 'Color', 'r', 'LineWidth', 2);
+
+% Plot the difference between the two conditions
+p3 = plot(hours, difference, '-^', 'DisplayName', 'Difference (1000 Lux Week 4 - 300 Lux)', 'Color', 'g', 'LineWidth', 2);
+
+% Add shaded area if needed (uncomment the function call if you need shaded regions)
+addShadedAreaToPlotZT24Hour();
+
+% Add plot settings
+title('Mean SelectedPixelDifference and Differences Over 24 Hours');
+xlabel('Hour of Day');
+ylabel('Mean SelectedPixelDifference');
+legend('show', 'Location', 'northeast');
+grid on;
+
+% Ensure the bars are on top
+uistack(p1, 'top');
+uistack(p2, 'top');
+uistack(p3, 'top');
+
+hold off;
 %% functions
 % Function to add a shaded area to the current plot
 function addShadedAreaToPlotZT48Hour()
@@ -84,8 +138,8 @@ function addShadedAreaToPlotZT48Hour()
     fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
     
     % Add shaded areas to the plot
-    fill(x_shaded1, y_shaded1, fill_color, 'EdgeColor', 'none');
-    fill(x_shaded2, y_shaded2, fill_color, 'EdgeColor', 'none');
+    fill(x_shaded1, y_shaded1, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    fill(x_shaded2, y_shaded2, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     
     % Additional Plot settings
     xlabel('Hour of Day (ZT Time)');
@@ -98,15 +152,17 @@ function addShadedAreaToPlotZT48Hour()
 end
 
 % Function to add a shaded area to the current plot
-function addShadedAreaToPlot24Hour()
+function addShadedAreaToPlotZT24Hour()
     hold on;
     % Define x and y coordinates for the shaded area (from t=12 to t=24)
     x_shaded = [12, 24, 24, 12];
     y_lim = ylim;
     y_shaded = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
-    
+
     fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
-    fill(x_shaded, y_shaded, fill_color, 'EdgeColor', 'none');
+
+    % Add shaded areas to the plot with 'HandleVisibility', 'off' to exclude from the legend
+    fill(x_shaded, y_shaded, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     
     % Additional Plot settings
     xlabel('Hour of Day (ZT Time)');
