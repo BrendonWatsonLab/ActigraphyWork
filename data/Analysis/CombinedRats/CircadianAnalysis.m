@@ -22,15 +22,54 @@ sums48 = [hourlySum.sum_SelectedPixelDifference; hourlySum.sum_SelectedPixelDiff
 % Create the plot
 figure;
 b1 = bar(hours48, sums48, 'BarWidth', 1);
-addShadedAreaToPlotZT();
+addShadedAreaToPlotZT48Hour();
 title('Total Animal Circadian Sums Over 48 Hours');
 
 % Ensure the bars are on top
 uistack(b1, 'top'); 
 
+%% Finding what hour of the day accounts for the difference
+% Extract rows for the 300Lux and 1000Lux4 conditions
+data_300lux = combined_data(strcmp(combined_data.Condition, '300Lux'), :);
+data_1000lux_week4 = combined_data(strcmp(combined_data.Condition, '1000Lux4'), :);
+
+% Create 'Hour' column for both subsets
+data_300lux.Hour = hour(data_300lux.Date);
+data_1000lux_week4.Hour = hour(data_1000lux_week4.Date);
+
+% Summarize 'NormalizedActivity' by 'Hour' for both subsets
+mean_300lux = groupsummary(data_300lux, 'Hour', 'mean', 'NormalizedActivity');
+mean_1000lux_week4 = groupsummary(data_1000lux_week4, 'Hour', 'mean', 'NormalizedActivity');
+
+% Ensure both tables are sorted by 'Hour' for direct subtraction
+mean_300lux = sortrows(mean_300lux, 'Hour');
+mean_1000lux_week4 = sortrows(mean_1000lux_week4, 'Hour');
+
+% Subtract means: 1000Lux4 - 300Lux
+difference = mean_1000lux_week4.mean_NormalizedActivity - mean_300lux.mean_NormalizedActivity;
+
+% Prepare data for 24-hour plot
+hours = mean_300lux.Hour;
+
+% Create the plot
+figure;
+b1 = bar(hours, difference, 'BarWidth', 1);
+
+addShadedAreaToPlot24Hour();
+
+% Set plot title and labels
+title('Difference in NormalizedActivity: 1000 Lux Week4 - 300 Lux');
+xlabel('Hour of Day');
+ylabel('Difference in NormalizedActivity');
+
+% Ensure the bars are on top
+uistack(b1, 'top');
+
+% Display the figure
+grid on;
 %% functions
 % Function to add a shaded area to the current plot
-function addShadedAreaToPlotZT()
+function addShadedAreaToPlotZT48Hour()
     hold on;
     
     % Define x and y coordinates for the first shaded area (from t=12 to t=24)
@@ -54,6 +93,27 @@ function addShadedAreaToPlotZT()
     xlim([-0.5, 47.5]);
     xticks(0:1:47);
     xtickangle(90);
+    
+    hold off;
+end
+
+% Function to add a shaded area to the current plot
+function addShadedAreaToPlot24Hour()
+    hold on;
+    % Define x and y coordinates for the shaded area (from t=12 to t=24)
+    x_shaded = [12, 24, 24, 12];
+    y_lim = ylim;
+    y_shaded = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
+    
+    fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
+    fill(x_shaded, y_shaded, fill_color, 'EdgeColor', 'none');
+    
+    % Additional Plot settings
+    xlabel('Hour of Day (ZT Time)');
+    ylabel('Sum of PixelDifference');
+    xlim([-0.5, 23.5]);
+    xticks(0:23);
+    xtickangle(0);
     
     hold off;
 end
