@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QScrollArea
 import numpy as np
 import argparse
 import os
-os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
+#os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
 # need to comment out above line of code for macOS
 import re
 import datetime
@@ -268,16 +268,17 @@ class ActigraphyProcessor:
 
         return paths
 
-    def list_mp4_files(self, directory_path, oaf):
+    def list_mp4_files(self, directory_path, output_directory, oaf):
         mp4_files = [f for f in os.listdir(directory_path) if f.endswith('.mp4')]
-        csv_files = [f for f in os.listdir(directory_path) if f.endswith('.csv')]
+        csv_filesi = [f for f in os.listdir(directory_path) if f.endswith('.csv')]
+        csv_fileso = [f for f in os.listdir(output_directory) if f.endswith('.csv')]
         
         if mp4_files:
             updated_mp4_files = []
             print("List of all the MP4 files in {}: ".format(directory_path))
             for mp4_file in mp4_files:
                 print(mp4_file)
-                if mp4_file[:-4] + "_actigraphy.csv" in csv_files:
+                if mp4_file[:-4] + "_actigraphy.csv" in csv_fileso or mp4_file[:-4] + "_actigraphy.csv" in csv_filesi:
                     print("Actigraphy file already found for {}.".format(mp4_file))
                     if oaf:
                         print("Overide Actigraphy Files set True, Redoing this file.")
@@ -368,7 +369,7 @@ class ActigraphyProcessor:
         all_mp4_files = [
             os.path.join(folder, mp4_file)
             for folder in nested_folders
-            for mp4_file in self.list_mp4_files(folder, oaf)
+            for mp4_file in self.list_mp4_files(folder, output_directory, oaf)
         ]
         total_files = len(all_mp4_files)
         files_processed = 0
