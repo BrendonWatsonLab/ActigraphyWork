@@ -49,7 +49,7 @@ function CombineSortCsv2(parentDir, folder_name)
     end
     
     % Delete unnecessary columns (Frame and TimeElapsed)
-    sortedCombinedData = removevars(sortedCombinedData, {'Frame', 'TimeElapsed'});
+    sortedCombinedData = removevars(sortedCombinedData, {'Frame'});
 
     % Convert 'PositTime' from milliseconds to seconds
     PositTime_seconds = sortedCombinedData.PositTime / 1000;
