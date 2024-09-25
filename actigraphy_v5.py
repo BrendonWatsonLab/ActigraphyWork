@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QScrollArea
 import numpy as np
 import argparse
 import os
-os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
+#os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
 # need to comment out above line of code for macOS
 import re
 import datetime
@@ -296,12 +296,11 @@ class ActigraphyProcessor:
 
         # Determine whether to use creation time from the file name or os.path.getctime
         if name_stamp or name_stamp is None:
-            print("Extracting creation time from the name.")
             creation_time = self._get_creation_time_from_name(video_file)
         else:
-            print("Using the file's actual creation time.")
-            creation_time = int(os.path.getctime(video_file)*1000)
-            
+            creation_time = int(os.path.getctime(video_file) * 1000)
+        
+        print(f"File creation time: {creation_time}")
 
         cap = cv2.VideoCapture(video_file)
         prev_frame = None
@@ -309,20 +308,18 @@ class ActigraphyProcessor:
 
         # Automatically generate the output CSV file path based on the video file name
         outputfile_name = os.path.splitext(os.path.basename(video_file))[0] + "_actigraphy.csv"
-        # If an output directory is provided, use it; otherwise, save next to the video file
         output_file_path = os.path.join(output_directory, outputfile_name) if output_directory else os.path.join(os.path.dirname(video_file), outputfile_name)
+        print(f"Output file path: {output_file_path}")
 
         result_rows = []
         with open(output_file_path, 'w', newline='') as output_file:
             writer = csv.writer(output_file)
-            writer.writerow(['Frame', 'TimeElapsedMicros', 'RawDifference', 'RMSE','SelectedPixelDifference', 'PositTime'])
+            writer.writerow(['Frame', 'TimeElapsedMicros', 'RawDifference', 'RMSE', 'SelectedPixelDifference', 'PositTime'])
 
             if set_roi and self.roi_pts is None:
-                # If set_roi is True and roi_pts is not provided, prompt the user to select ROI
-                print("Please select the region of interest (ROI) in the first frame.")
                 self.roi_pts = self._select_roi_from_first_frame(cap)
-        
-            print(f"\nProcessing video file: {video_file}")
+                
+            print(f"Processing video file: {video_file}")
             writer.writerow([1, 0, 0, 0, 0, creation_time])
 
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -333,17 +330,16 @@ class ActigraphyProcessor:
                     break
                 frame_number += 1
                 elapsed_millis = cap.get(cv2.CAP_PROP_POS_MSEC)
+                print(f"Frame {frame_number}, Elapsed milliseconds: {elapsed_millis}")
 
                 if set_roi and self.roi_pts:
-                    # Apply the ROI if set_roi is True
                     frame = self._apply_roi(frame, self.roi_pts)
 
                 if prev_frame is not None:
                     raw_diff, rmse, selected_pixel_diff = self._calculate_metrics(frame, prev_frame, float(self.global_threshold), float(self.min_size_threshold), float(self.percentage_threshold), int(self.dilation_kernel))
-                    # Calculate Posixtime based on creation time and elapsed time
-                    posix_time = int(creation_time + (elapsed_millis))
+                    posix_time = int(creation_time + elapsed_millis)
+                    print(f"Frame {frame_number}, POSIX time: {posix_time}")
 
-                    # writes a line of the csv in batches of 1000
                     result_rows.append([frame_number, elapsed_millis, raw_diff, rmse, selected_pixel_diff, posix_time])
                     if len(result_rows) >= 1000:
                         writer.writerows(result_rows)
@@ -351,10 +347,10 @@ class ActigraphyProcessor:
 
                 prev_frame = frame
 
-                if progress_callback and frame_number % 100 == 0:  # Updates every 100 frames for progress bar
+                if progress_callback and frame_number % 100 == 0:
                     progress = (frame_number / total_frames) * 100
                     progress_callback.emit(int(progress))
-            
+
             writer.writerows(result_rows)
             cap.release()
             print(f"Actigraphy processing completed for {video_file}")
@@ -498,47 +494,31 @@ class ActigraphyProcessor:
 
     @staticmethod
     def _get_creation_time_from_name(filename):
-        regex_pattern_1 = r'(\d{8}_\d{9})'
-        regex_pattern_2 = r'(\d{8}_\d{6})'
+        # New regex pattern to match 'YYYYMMDD_HH-MM-SS.SSS'
+        regex_pattern = r'(\d{8}_\d{2}-\d{2}-\d{2}\.\d{3})'
         
-        # Try the first regex pattern
-        match = re.search(regex_pattern_1, os.path.basename(filename))
+        # Try matching the new regex pattern
+        match = re.search(regex_pattern, os.path.basename(filename))
         
         if match:
             # Extract the matched date and time
             date_time_str = match.group(1)
-            #print(date_time_str)
+            print(f"Extracted date time string: {date_time_str}")  # Debug print
+            
             # Include milliseconds in the format
-            date_time_format = '%Y%m%d_%H%M%S%f'
+            date_time_format = '%Y%m%d_%H-%M-%S.%f'
             
             # Convert the date and time string to a datetime object
             date_time_obj = datetime.strptime(date_time_str, date_time_format)
+            print(f"Parsed datetime object: {date_time_obj}")  # Debug print
             
             # Get the POSIX timestamp in milliseconds
             posix_timestamp_ms = int(date_time_obj.timestamp() * 1000)
             
             return posix_timestamp_ms
         else:
-            # If the first pattern didn't match, try the second pattern
-            match = re.search(regex_pattern_2, os.path.basename(filename))
-            
-            if match:
-                # Extract the matched date and time from the second pattern
-                date_time_str = match.group(1)
-                
-                # Include milliseconds in the format
-                date_time_format = '%Y%m%d_%H%M%S'
-                
-                # Convert the date and time string to a datetime object
-                date_time_obj = datetime.strptime(date_time_str, date_time_format)
-                
-                # Get the POSIX timestamp in milliseconds
-                posix_timestamp_ms = int(date_time_obj.timestamp() * 1000)
-                
-                return posix_timestamp_ms
-            else:
-                print("Failed to extract creation time from the file name. Using file generated time instead.")
-                return int(os.path.getctime(filename)*1000)
+            print("Failed to extract creation time from the file name. Using file generated time instead.")
+            return int(os.path.getctime(filename) * 1000)
 
 
 if __name__ == "__main__":
