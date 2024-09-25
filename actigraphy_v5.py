@@ -302,7 +302,7 @@ class ActigraphyProcessor:
         else:
             creation_time = int(os.path.getctime(video_file) * 1000)
         
-        print(f"File creation time: {creation_time}")
+        #print(f"File creation time: {creation_time}")
 
         cap = cv2.VideoCapture(video_file)
         prev_frame = None
@@ -332,7 +332,7 @@ class ActigraphyProcessor:
                     break
                 frame_number += 1
                 elapsed_millis = cap.get(cv2.CAP_PROP_POS_MSEC)
-                print(f"Frame {frame_number}, Elapsed milliseconds: {elapsed_millis}")
+                #print(f"Frame {frame_number}, Elapsed milliseconds: {elapsed_millis}")
 
                 if set_roi and self.roi_pts:
                     frame = self._apply_roi(frame, self.roi_pts)
@@ -340,7 +340,7 @@ class ActigraphyProcessor:
                 if prev_frame is not None:
                     raw_diff, rmse, selected_pixel_diff = self._calculate_metrics(frame, prev_frame, float(self.global_threshold), float(self.min_size_threshold), float(self.percentage_threshold), int(self.dilation_kernel))
                     posix_time = int(creation_time + elapsed_millis)
-                    print(f"Frame {frame_number}, POSIX time: {posix_time}")
+                    #print(f"Frame {frame_number}, POSIX time: {posix_time}")
 
                     result_rows.append([frame_number, elapsed_millis, raw_diff, rmse, selected_pixel_diff, posix_time])
                     if len(result_rows) >= 1000:
@@ -508,14 +508,14 @@ class ActigraphyProcessor:
         if match:
             # Extract the matched date and time
             date_time_str = match.group(1)
-            print(f"Extracted date time string: {date_time_str}")  # Debug print
+            #print(f"Extracted date time string: {date_time_str}")  # Debug print
             
             # Include milliseconds in the format
             date_time_format = '%Y%m%d_%H-%M-%S.%f'
             
             # Convert the date and time string to a datetime object
             date_time_obj = datetime.strptime(date_time_str, date_time_format)
-            print(f"Parsed datetime object: {date_time_obj}")  # Debug print
+            #print(f"Parsed datetime object: {date_time_obj}")  # Debug print
             
             # Get the POSIX timestamp in milliseconds
             posix_timestamp_ms = int(date_time_obj.timestamp() * 1000)
