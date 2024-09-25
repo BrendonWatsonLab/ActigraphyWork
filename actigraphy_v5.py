@@ -18,6 +18,8 @@ import re
 import datetime
 import time
 from datetime import datetime
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import cpu_count
 
 class Worker(QThread):
     progress_signal = pyqtSignal(int)
@@ -360,13 +362,15 @@ class ActigraphyProcessor:
         start_time = time.time()
         total_frames_processed = 0
         total_time_taken = 0
-
         nested_folders = self.get_nested_paths(video_folder)
+        
+        # Collecting all mp4 file paths
         all_mp4_files = [
             os.path.join(folder, mp4_file)
             for folder in nested_folders
             for mp4_file in self.list_mp4_files(folder, output_directory, oaf)
         ]
+        
         total_files = len(all_mp4_files)
         files_processed = 0
 
@@ -374,51 +378,39 @@ class ActigraphyProcessor:
             print("No video files to process.")
             return
 
-        # Initialize roi_pts here if set_roi is True and the ROI hasn't been set yet
         if set_roi and not self.roi_pts and all_mp4_files:
             first_video_file = all_mp4_files[0]
-            cap = cv2.VideoCapture(first_video_file)
-            if cap.isOpened():
-                self.roi_pts = self._select_roi_from_first_frame(cap)
-                cap.release()  # Release the capture object after getting ROI
-            else:
-                print(f"Failed to open the first video file: {first_video_file}")
-                return
+            with cv2.VideoCapture(first_video_file) as cap:
+                if cap.isOpened():
+                    self.roi_pts = self._select_roi_from_first_frame(cap)
+                    cap.release()
+                else:
+                    print(f"Failed to open the first video file: {first_video_file}")
+                    return
 
-        for mp4_file in all_mp4_files:
-            file_start_time = time.time()
+        with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
+            futures = [executor.submit(self.process_single_video_file, mp4_file, name_stamp, set_roi, output_directory, None, self.roi_pts)
+                       for mp4_file in all_mp4_files]
 
-            # Process the single video file
-            self.process_single_video_file(mp4_file, name_stamp, set_roi, output_directory, None, self.roi_pts)
+            for future in futures:
+                future.result()  # Ensure each task completes
+                files_processed += 1
 
-            # track timing
-            file_end_time = time.time()
-            file_time_taken = file_end_time - file_start_time
-            total_time_taken += file_time_taken
+                if progress_callback:
+                    folder_progress = int((files_processed / total_files) * 100)
+                    progress_callback.emit(folder_progress)
 
-            files_processed += 1
-            # Calculate and emit the overall processing progress
-            if progress_callback:
-                folder_progress = int((files_processed / total_files) * 100)
-                progress_callback.emit(folder_progress)
+                with cv2.VideoCapture(mp4_file) as cap:
+                    total_frames_processed += int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-            # gets frames processed
-            cap = cv2.VideoCapture(mp4_file)
-            total_frames_processed += int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            cap.release()
-
-        # Stop the overall timer
         end_time = time.time()
-
         total_time_taken = end_time - start_time
         time_per_frame = total_time_taken / total_frames_processed if total_frames_processed else float('inf')
 
-        # Print the cumulative results
         print("Total Time Taken for All Videos: {:.2f} seconds".format(total_time_taken))
         print("Total Frames Processed for All Videos: {}".format(total_frames_processed))
         print("Average Time Per Frame for All Videos: {:.4f} seconds".format(time_per_frame))
-        
-        # Emit the final signal when done
+
         if progress_callback:
             progress_callback.emit(100)
 
