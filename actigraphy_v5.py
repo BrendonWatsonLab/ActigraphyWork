@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QScrollArea
 import numpy as np
 import argparse
 import os
-os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
+#os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
 # need to comment out above line of code for macOS
 import re
 import datetime
@@ -380,29 +380,41 @@ class ActigraphyProcessor:
 
         if set_roi and not self.roi_pts and all_mp4_files:
             first_video_file = all_mp4_files[0]
-            with cv2.VideoCapture(first_video_file) as cap:
-                if cap.isOpened():
-                    self.roi_pts = self._select_roi_from_first_frame(cap)
-                    cap.release()
-                else:
-                    print(f"Failed to open the first video file: {first_video_file}")
-                    return
+            cap = cv2.VideoCapture(first_video_file)
+            if cap.isOpened():
+                self.roi_pts = self._select_roi_from_first_frame(cap)
+                cap.release()
+            else:
+                print(f"Failed to open the first video file: {first_video_file}")
+                return
 
+        # Use ProcessPoolExecutor for parallel processing of videos
         with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
             futures = [executor.submit(self.process_single_video_file, mp4_file, name_stamp, set_roi, output_directory, None, self.roi_pts)
                        for mp4_file in all_mp4_files]
 
-            for future in futures:
-                future.result()  # Ensure each task completes
+            for future, mp4_file in zip(futures, all_mp4_files):
+                try:
+                    future.result()  # Ensure each task completes
+                except Exception as e:
+                    print(f"Error processing {mp4_file}: {e}")
+                    continue
+                
+                # Increment files processed count
                 files_processed += 1
 
+                # Update progress callback, if provided
                 if progress_callback:
                     folder_progress = int((files_processed / total_files) * 100)
                     progress_callback.emit(folder_progress)
-
-                with cv2.VideoCapture(mp4_file) as cap:
+                
+                # Update total frames processed
+                cap = cv2.VideoCapture(mp4_file)
+                if cap.isOpened():
                     total_frames_processed += int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                    cap.release()
 
+        # Calculate total time taken and print statistics
         end_time = time.time()
         total_time_taken = end_time - start_time
         time_per_frame = total_time_taken / total_frames_processed if total_frames_processed else float('inf')
@@ -411,6 +423,7 @@ class ActigraphyProcessor:
         print("Total Frames Processed for All Videos: {}".format(total_frames_processed))
         print("Average Time Per Frame for All Videos: {:.4f} seconds".format(time_per_frame))
 
+        # Emit final progress signal if callback is provided
         if progress_callback:
             progress_callback.emit(100)
 
