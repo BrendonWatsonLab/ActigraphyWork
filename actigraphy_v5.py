@@ -12,14 +12,12 @@ from PyQt5.QtWidgets import QScrollArea
 import numpy as np
 import argparse
 import os
-os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
+#os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
 # need to comment out above line of code for macOS
 import re
 import datetime
 import time
 from datetime import datetime
-from concurrent.futures import ProcessPoolExecutor
-from multiprocessing import cpu_count
 
 class Worker(QThread):
     progress_signal = pyqtSignal(int)
@@ -298,11 +296,12 @@ class ActigraphyProcessor:
 
         # Determine whether to use creation time from the file name or os.path.getctime
         if name_stamp or name_stamp is None:
+            print("Extracting creation time from the name.")
             creation_time = self._get_creation_time_from_name(video_file)
         else:
-            creation_time = int(os.path.getctime(video_file) * 1000)
-        
-        #print(f"File creation time: {creation_time}")
+            print("Using the file's actual creation time.")
+            creation_time = int(os.path.getctime(video_file)*1000)
+            
 
         cap = cv2.VideoCapture(video_file)
         prev_frame = None
@@ -310,18 +309,20 @@ class ActigraphyProcessor:
 
         # Automatically generate the output CSV file path based on the video file name
         outputfile_name = os.path.splitext(os.path.basename(video_file))[0] + "_actigraphy.csv"
+        # If an output directory is provided, use it; otherwise, save next to the video file
         output_file_path = os.path.join(output_directory, outputfile_name) if output_directory else os.path.join(os.path.dirname(video_file), outputfile_name)
-        print(f"Output file path: {output_file_path}")
 
         result_rows = []
         with open(output_file_path, 'w', newline='') as output_file:
             writer = csv.writer(output_file)
-            writer.writerow(['Frame', 'TimeElapsedMicros', 'RawDifference', 'RMSE', 'SelectedPixelDifference', 'PositTime'])
+            writer.writerow(['Frame', 'TimeElapsedMicros', 'RawDifference', 'RMSE','SelectedPixelDifference', 'PositTime'])
 
             if set_roi and self.roi_pts is None:
+                # If set_roi is True and roi_pts is not provided, prompt the user to select ROI
+                print("Please select the region of interest (ROI) in the first frame.")
                 self.roi_pts = self._select_roi_from_first_frame(cap)
-                
-            print(f"Processing video file: {video_file}")
+        
+            print(f"\nProcessing video file: {video_file}")
             writer.writerow([1, 0, 0, 0, 0, creation_time])
 
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -332,16 +333,17 @@ class ActigraphyProcessor:
                     break
                 frame_number += 1
                 elapsed_millis = cap.get(cv2.CAP_PROP_POS_MSEC)
-                #print(f"Frame {frame_number}, Elapsed milliseconds: {elapsed_millis}")
 
                 if set_roi and self.roi_pts:
+                    # Apply the ROI if set_roi is True
                     frame = self._apply_roi(frame, self.roi_pts)
 
                 if prev_frame is not None:
                     raw_diff, rmse, selected_pixel_diff = self._calculate_metrics(frame, prev_frame, float(self.global_threshold), float(self.min_size_threshold), float(self.percentage_threshold), int(self.dilation_kernel))
-                    posix_time = int(creation_time + elapsed_millis)
-                    #print(f"Frame {frame_number}, POSIX time: {posix_time}")
+                    # Calculate Posixtime based on creation time and elapsed time
+                    posix_time = int(creation_time + (elapsed_millis))
 
+                    # writes a line of the csv in batches of 1000
                     result_rows.append([frame_number, elapsed_millis, raw_diff, rmse, selected_pixel_diff, posix_time])
                     if len(result_rows) >= 1000:
                         writer.writerows(result_rows)
@@ -349,10 +351,10 @@ class ActigraphyProcessor:
 
                 prev_frame = frame
 
-                if progress_callback and frame_number % 100 == 0:
+                if progress_callback and frame_number % 100 == 0:  # Updates every 100 frames for progress bar
                     progress = (frame_number / total_frames) * 100
                     progress_callback.emit(int(progress))
-
+            
             writer.writerows(result_rows)
             cap.release()
             print(f"Actigraphy processing completed for {video_file}")
@@ -362,15 +364,13 @@ class ActigraphyProcessor:
         start_time = time.time()
         total_frames_processed = 0
         total_time_taken = 0
+
         nested_folders = self.get_nested_paths(video_folder)
-        
-        # Collecting all mp4 file paths
         all_mp4_files = [
             os.path.join(folder, mp4_file)
             for folder in nested_folders
             for mp4_file in self.list_mp4_files(folder, output_directory, oaf)
         ]
-        
         total_files = len(all_mp4_files)
         files_processed = 0
 
@@ -378,52 +378,51 @@ class ActigraphyProcessor:
             print("No video files to process.")
             return
 
+        # Initialize roi_pts here if set_roi is True and the ROI hasn't been set yet
         if set_roi and not self.roi_pts and all_mp4_files:
             first_video_file = all_mp4_files[0]
             cap = cv2.VideoCapture(first_video_file)
             if cap.isOpened():
                 self.roi_pts = self._select_roi_from_first_frame(cap)
-                cap.release()
+                cap.release()  # Release the capture object after getting ROI
             else:
                 print(f"Failed to open the first video file: {first_video_file}")
                 return
 
-        # Use ProcessPoolExecutor for parallel processing of videos
-        with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
-            futures = [executor.submit(self.process_single_video_file, mp4_file, name_stamp, set_roi, output_directory, None, self.roi_pts)
-                       for mp4_file in all_mp4_files]
+        for mp4_file in all_mp4_files:
+            file_start_time = time.time()
 
-            for future, mp4_file in zip(futures, all_mp4_files):
-                try:
-                    future.result()  # Ensure each task completes
-                except Exception as e:
-                    print(f"Error processing {mp4_file}: {e}")
-                    continue
-                
-                # Increment files processed count
-                files_processed += 1
+            # Process the single video file
+            self.process_single_video_file(mp4_file, name_stamp, set_roi, output_directory, None, self.roi_pts)
 
-                # Update progress callback, if provided
-                if progress_callback:
-                    folder_progress = int((files_processed / total_files) * 100)
-                    progress_callback.emit(folder_progress)
-                
-                # Update total frames processed
-                cap = cv2.VideoCapture(mp4_file)
-                if cap.isOpened():
-                    total_frames_processed += int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                    cap.release()
+            # track timing
+            file_end_time = time.time()
+            file_time_taken = file_end_time - file_start_time
+            total_time_taken += file_time_taken
 
-        # Calculate total time taken and print statistics
+            files_processed += 1
+            # Calculate and emit the overall processing progress
+            if progress_callback:
+                folder_progress = int((files_processed / total_files) * 100)
+                progress_callback.emit(folder_progress)
+
+            # gets frames processed
+            cap = cv2.VideoCapture(mp4_file)
+            total_frames_processed += int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            cap.release()
+
+        # Stop the overall timer
         end_time = time.time()
+
         total_time_taken = end_time - start_time
         time_per_frame = total_time_taken / total_frames_processed if total_frames_processed else float('inf')
 
+        # Print the cumulative results
         print("Total Time Taken for All Videos: {:.2f} seconds".format(total_time_taken))
         print("Total Frames Processed for All Videos: {}".format(total_frames_processed))
         print("Average Time Per Frame for All Videos: {:.4f} seconds".format(time_per_frame))
-
-        # Emit final progress signal if callback is provided
+        
+        # Emit the final signal when done
         if progress_callback:
             progress_callback.emit(100)
 
@@ -508,14 +507,14 @@ class ActigraphyProcessor:
         if match:
             # Extract the matched date and time
             date_time_str = match.group(1)
-            #print(f"Extracted date time string: {date_time_str}")  # Debug print
+            print(f"Extracted date time string: {date_time_str}")  # Debug print
             
             # Include milliseconds in the format
             date_time_format = '%Y%m%d_%H-%M-%S.%f'
             
             # Convert the date and time string to a datetime object
             date_time_obj = datetime.strptime(date_time_str, date_time_format)
-            #print(f"Parsed datetime object: {date_time_obj}")  # Debug print
+            print(f"Parsed datetime object: {date_time_obj}")  # Debug print
             
             # Get the POSIX timestamp in milliseconds
             posix_timestamp_ms = int(date_time_obj.timestamp() * 1000)
