@@ -11,7 +11,7 @@ import datetime
 from datetime import datetime
 
 class ActigraphyProcessor:
-    def __init__(self, min_size_threshold=0.0, global_threshold=0.0, percentage_threshold=0.0, dilation_kernel=0, output_file_path=None, roi_pts=None):
+    def __init__(self, min_size_threshold=120, global_threshold=15, percentage_threshold=25, dilation_kernel=4, output_file_path=None, roi_pts=None):
         self.min_size_threshold = min_size_threshold
         self.global_threshold = global_threshold
         self.percentage_threshold = percentage_threshold
@@ -27,10 +27,10 @@ class ActigraphyProcessor:
         if mp4_files:
             for mp4_file in mp4_files:
                 if mp4_file[:-4] + "_actigraphy.csv" in csv_files:
-                    print(f"Actigraphy file already found for {mp4_file}.")
                     if oaf:
-                        print("Overide Actigraphy Files set True, Redoing this file.")
+                        print(f"Overriding existing file for {mp4_file}")
                     else:
+                        print(f"Skipping {mp4_file} as actigraphy file already exists.")
                         continue
                 result_files.append(mp4_file)
         else:
@@ -40,7 +40,7 @@ class ActigraphyProcessor:
 
     def process_single_video_file(self, video_file, name_stamp, set_roi, output_directory, roi_pts=None):
         # Determine whether to use creation time from the file name or os.path.getctime
-        if name_stamp or name_stamp is None:
+        if name_stamp:
             print("Extracting creation time from the name.")
             creation_time = self._get_creation_time_from_name(video_file)
         else:
@@ -118,7 +118,7 @@ class ActigraphyProcessor:
         
         for mp4_file in all_mp4_files:
             self.process_single_video_file(mp4_file, name_stamp, set_roi, output_directory, self.roi_pts)
-
+        
     def get_nested_paths(self, root_dir):
         queue = [root_dir]
         paths = []
@@ -201,27 +201,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process actigraphy from video files.')
     parser.add_argument('--video_file', type=str, help='Path to a single video file.')
     parser.add_argument('--video_folder', type=str, help='Path to a folder containing video files.')
-    parser.add_argument('--min_size_threshold', type=int, default=0, help='Minimum size threshold.')
-    parser.add_argument('--global_threshold', type=int, default=0, help='Global threshold.')
-    parser.add_argument('--percentage_threshold', type=int, default=0, help='Percentage threshold.')
-    parser.add_argument('--dilation_kernel', type=int, default=0, help='Dilation kernel size.')
     parser.add_argument('--oaf', action='store_true', help='Override Actigraphy Files.')
-    parser.add_argument('--set_roi', action='store_true', help='Set Region of Interest (ROI).')
-    parser.add_argument('--name_stamp', action='store_true', help='Use Name Stamp.')
     parser.add_argument('--output_directory', type=str, help='Output directory for CSV files.')
 
     args = parser.parse_args()
 
-    processor = ActigraphyProcessor(
-        min_size_threshold=args.min_size_threshold,
-        global_threshold=args.global_threshold,
-        percentage_threshold=args.percentage_threshold,
-        dilation_kernel=args.dilation_kernel
-    )
+    name_stamp = None
+    set_roi = False
+
+    processor = ActigraphyProcessor()
 
     if args.video_file:
-        processor.process_single_video_file(args.video_file, args.name_stamp, args.set_roi, args.output_directory)
+        processor.process_single_video_file(args.video_file, name_stamp, set_roi, args.output_directory)
     elif args.video_folder:
-        processor.process_video_files(args.video_folder, args.oaf, args.set_roi, args.name_stamp, args.output_directory)
+        processor.process_video_files(args.video_folder, args.oaf, set_roi, name_stamp, args.output_directory)
     else:
         print("Please provide either a video file or a video folder.")
