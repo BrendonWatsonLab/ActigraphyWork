@@ -9,6 +9,7 @@ import numpy as np
 import re
 import datetime
 from datetime import datetime
+from multiprocessing import Pool
 
 class ActigraphyProcessor:
     def __init__(self, min_size_threshold=120, global_threshold=15, percentage_threshold=25, dilation_kernel=4, output_file_path=None, roi_pts=None):
@@ -115,10 +116,11 @@ class ActigraphyProcessor:
             if cap.isOpened():
                 self.roi_pts = self._select_roi_from_first_frame(cap)
                 cap.release()
-        
-        for mp4_file in all_mp4_files:
-            self.process_single_video_file(mp4_file, name_stamp, set_roi, output_directory, self.roi_pts)
-        
+
+        # Parallel processing of video files
+        pool = Pool()
+        pool.starmap(self.process_single_video_file, [(file, name_stamp, set_roi, output_directory, self.roi_pts) for file in all_mp4_files])
+
     def get_nested_paths(self, root_dir):
         queue = [root_dir]
         paths = []
