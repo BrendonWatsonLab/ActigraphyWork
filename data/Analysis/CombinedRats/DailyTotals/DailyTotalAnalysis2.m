@@ -4,7 +4,7 @@
 fprintf('Reading in table');
 
 % reads in data from .csv
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT/CombinedRelDaysBinned.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/ZT/CombinedRelDaysBinned.csv');
 
 %% Plotting
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
@@ -154,7 +154,7 @@ for a = 1:length(uniqueAnimals)
 
             if isempty(dayConditionData)
                 continue;
-            en
+            end
             
             % Calculate the mean and standard error for the current day and condition
             meanActivity = mean(dayConditionData.NormalizedActivity);
