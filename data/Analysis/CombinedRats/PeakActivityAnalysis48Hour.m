@@ -1,8 +1,4 @@
-%% Overall analysis of circadian 24 hour activity
-% Looking at all rats and all conditions over a 24 hour time period to find
-% peak analysis. All data is normalized to each specific rat AND condition,
-% so this looks only at peak activity, not comparing across lighting
-% conditions
+%% Overall analysis of circadian 24-hour activity
 
 % List of rat IDs and conditions
 ratIDs = {'Rollo', 'Canute', 'Harald', 'Gunnar', 'Egil', 'Sigurd', 'Olaf'}; % Add more rat IDs as needed
@@ -62,8 +58,11 @@ for i = 1:length(ratIDs)
                     zscoredActivity = (binnedActivity - meanActivity) / stdActivity;
                 end
                 
+                % Duplicate the 24-hour data to cover 48 hours
+                zscoredActivity48 = [zscoredActivity; zscoredActivity];
+                
                 % Store results for each animal and condition
-                normalizedActivity.(ratID).(validCondition).binnedActivity = zscoredActivity;
+                normalizedActivity.(ratID).(validCondition).binnedActivity = zscoredActivity48;
             else
                 fprintf('Column "Date" or "SelectedPixelDifference" not found in file: %s\n', fullPath);
             end
@@ -78,7 +77,9 @@ figure;
 hold on;
 
 % Add gray shading from ZT = 12 to ZT = 23
-fill([12 23 23 12], [-3 -3 4 4], [0.7 0.7 0.7], 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off'); % Adjust y-limits [-5, 5] according to your data
+fill([12 23 23 12], [-3 -3 4 4], [0.7 0.7 0.7], 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off');
+% Add gray shading from ZT = 36 to ZT = 47
+fill([36 47 47 36], [-3 -3 4 4], [0.7 0.7 0.7], 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off');
 
 % Plot all conditions together for comparison
 colors = lines(length(conditions));
@@ -91,10 +92,10 @@ for j = 1:length(validConditionNames)
         ratID = ratIDs{i};
         
         if isfield(normalizedActivity, ratID) && isfield(normalizedActivity.(ratID), validCondition)
-            binnedActivity = normalizedActivity.(ratID).(validCondition).binnedActivity;
+            binnedActivity48 = normalizedActivity.(ratID).(validCondition).binnedActivity;
             
             % Plot each rat's z-score normalized activity data
-            plot(0:23, binnedActivity, 'DisplayName', sprintf('%s - %s', ratID, conditions{j}), 'Color', colors(j, :));
+            plot(0:47, binnedActivity48, 'DisplayName', sprintf('%s - %s', ratID, conditions{j}), 'Color', colors(j, :));
             hold on;
             
             legendEntries{end+1} = sprintf('%s - %s', ratID, conditions{j});
@@ -104,14 +105,13 @@ end
 
 xlabel('Hour of the Day');
 ylabel('Normalized Activity');
-title('Normalized Activity Over 24 Hours for All Rats');
-
+title('Normalized Activity Over 48 Hours for All Rats');
 legend(legendEntries, 'Location', 'BestOutside');
 hold off;
 
-disp('Z-score normalized activity analysis and plots generated and saved.');
+disp('48-hour z-score normalized activity analysis and plots generated and saved.');
 
-%% Analyzing and plotting for conditions only 
+%% Analyzing and plotting for conditions only
 
 % List of rat IDs and conditions
 ratIDs = {'Rollo', 'Canute', 'Harald', 'Gunnar', 'Egil', 'Sigurd', 'Olaf'}; % Add more rat IDs as needed
@@ -171,8 +171,11 @@ for i = 1:length(ratIDs)
                     zscoredActivity = (binnedActivity - meanActivity) / stdActivity;
                 end
                 
+                % Duplicate the 24-hour data to cover 48 hours
+                zscoredActivity48 = [zscoredActivity; zscoredActivity];
+                
                 % Store results for each animal and condition
-                normalizedActivity.(ratID).(validCondition).binnedActivity = zscoredActivity;
+                normalizedActivity.(ratID).(validCondition).binnedActivity = zscoredActivity48;
             else
                 fprintf('Column "Date" or "SelectedPixelDifference" not found in file: %s\n', fullPath);
             end
@@ -182,11 +185,14 @@ for i = 1:length(ratIDs)
     end
 end
 
-% Graphical representation of normalized activity for average conditions
+% Graphical representation of normalized activity
 figure;
 hold on;
 
-fill([12 23 23 12], [-1.5 -1.5 3 3], [0.7 0.7 0.7], 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off'); % Adjust y-limits [-5, 5] according to your data
+% Add gray shading from ZT = 12 to ZT = 23
+fill([12 23 23 12], [-1.5 -1.5 3 3], [0.7 0.7 0.7], 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off');
+% Add gray shading from ZT = 36 to ZT = 47
+fill([36 47 47 36], [-1.5 -1.5 3 3], [0.7 0.7 0.7], 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off');
 
 % Plot the average activity for each condition
 colors = lines(length(conditions));
@@ -200,16 +206,16 @@ for j = 1:length(validConditionNames)
         ratID = ratIDs{i};
         
         if isfield(normalizedActivity, ratID) && isfield(normalizedActivity.(ratID), validCondition)
-            binnedActivity = normalizedActivity.(ratID).(validCondition).binnedActivity;
-            allBinnedActivities = [allBinnedActivities; binnedActivity'];
+            binnedActivity48 = normalizedActivity.(ratID).(validCondition).binnedActivity;
+            allBinnedActivities = [allBinnedActivities; binnedActivity48'];
         end 
     end
     
     % Calculate the mean activity over all rats for this condition
-    meanBinnedActivity = mean(allBinnedActivities, 1, 'omitnan');
+    meanBinnedActivity48 = mean(allBinnedActivities, 1, 'omitnan');
 
     % Plot the mean activity for this condition
-    plot(0:23, meanBinnedActivity, 'DisplayName', conditions{j}, 'Color', colors(j, :), 'LineWidth', 2);
+    plot(0:47, meanBinnedActivity48, 'DisplayName', conditions{j}, 'Color', colors(j, :), 'LineWidth', 2);
     hold on;
     
     legendEntries{end+1} = conditions{j};
@@ -217,10 +223,61 @@ end
 
 xlabel('Hour of the Day');
 ylabel('Normalized Activity');
-title('Normalized Activity Over 24 Hours for All Conditions');
-
+title('Normalized Activity Over 48 Hours for All Conditions');
 legend(legendEntries, 'Location', 'BestOutside');
 hold off;
 
-disp('Z-score normalized activity analysis and plots generated and saved.');
+disp('48-hour z-score normalized activity analysis and plots generated and saved.');
 
+%% functions
+% Function to add a shaded area to the current plot
+function addShadedAreaToPlotZT48Hour()
+    hold on;
+    
+    % Define x and y coordinates for the first shaded area (from t=12 to t=24)
+    x_shaded1 = [12, 24, 24, 12];
+    y_lim = ylim;
+    y_shaded1 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
+    
+    % Define x and y coordinates for the second shaded area (from t=36 to t=48)
+    x_shaded2 = [36, 48, 48, 36];
+    y_shaded2 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
+    
+    fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
+    
+    % Add shaded areas to the plot
+    fill(x_shaded1, y_shaded1, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    fill(x_shaded2, y_shaded2, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    
+    % Additional Plot settings
+    xlabel('Hour of Day (ZT Time)');
+    ylabel('Sum of PixelDifference');
+    xlim([-0.5, 47.5]);
+    xticks(0:1:47);
+    xtickangle(90);
+    
+    hold off;
+end
+
+% Function to add a shaded area to the current plot
+function addShadedAreaToPlotZT24Hour()
+    hold on;
+    % Define x and y coordinates for the shaded area (from t=12 to t=24)
+    x_shaded = [12, 24, 24, 12];
+    y_lim = ylim;
+    y_shaded = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
+
+    fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
+
+    % Add shaded areas to the plot with 'HandleVisibility', 'off' to exclude from the legend
+    fill(x_shaded, y_shaded, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    
+    % Additional Plot settings
+    xlabel('Hour of Day (ZT Time)');
+    ylabel('Sum of PixelDifference');
+    xlim([-0.5, 23.5]);
+    xticks(0:23);
+    xtickangle(0);
+    
+    hold off;
+end

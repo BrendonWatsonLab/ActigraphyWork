@@ -3,7 +3,7 @@
 ratIDs = {'Rollo', 'Canute', 'Harald', 'Gunnar', 'Egil', 'Sigurd', 'Olaf'}; % Add more rat IDs as needed
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 
-dataDir = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT/Combined_Normalized_Data.csv';
+dataDir = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/ZT';
 
 combinedData = Normalizer(dataDir, ratIDs, conditions);
 
@@ -16,9 +16,9 @@ means = zeros(length(conditions), 1);
 stderr = zeros(length(conditions), 1);
 
 % Group data for each condition
-data300Lux = combinedData.SelectedPixelDiff(strcmp(combinedData.Condition, '300Lux'));
-data1000Lux1 = combinedData.SelectedPixelDiff(strcmp(combinedData.Condition, '1000Lux1'));
-data1000Lux4 = combinedData.SelectedPixelDiff(strcmp(combinedData.Condition, '1000Lux4'));
+data300Lux = combinedData.SelectedPixelDifference(strcmp(combinedData.Condition, '300Lux'));
+data1000Lux1 = combinedData.SelectedPixelDifference(strcmp(combinedData.Condition, '1000Lux1'));
+data1000Lux4 = combinedData.SelectedPixelDifference(strcmp(combinedData.Condition, '1000Lux4'));
 
 % Calculate means and standard errors
 means(1) = mean(data300Lux);
@@ -85,7 +85,7 @@ line_y = y_max;
 hold off;
 
 % Save the figure if necessary
-saveas(gcf, fullfile(saveDir, 'Activity_Comparison_BarPlot_with_Significance.png'));
+%saveas(gcf, fullfile(saveDir, 'Activity_Comparison_BarPlot_with_Significance.png'));
 
 disp('Bar plot with statistical significance markers generated and saved.');
 

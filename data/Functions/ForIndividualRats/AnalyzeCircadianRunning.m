@@ -66,7 +66,7 @@ function AnalyzeCircadianRunning(datafile, convert_ZT, name)
     figure;
 
     % First subplot: ZT 22-2 vs ZT 10-14 vs Rest of Day
-    subplot(3, 1, 1);
+    subplot(1, 3, 1);
     hold on;
     b1 = bar([1, 2, 3], [mean_ZT_22_2, mean_ZT_10_14, mean_rest], 'FaceColor', 'flat');
     b1.CData(1,:) = [0.2, 0.2, 0.5]; % Color for ZT 22-2
@@ -92,7 +92,7 @@ function AnalyzeCircadianRunning(datafile, convert_ZT, name)
     hold off;
 
     % Second subplot: Lights On (ZT 0-9) vs Lights Off (ZT 15-23)
-    subplot(3, 1, 2);
+    subplot(1, 3, 2);
     hold on;
     b2 = bar([1, 2], [meanLightsOn, meanLightsOff], 'FaceColor', 'flat');
     b2.CData(1,:) = [0.2, 0.2, 0.5]; % Color for Lights On
@@ -116,7 +116,7 @@ function AnalyzeCircadianRunning(datafile, convert_ZT, name)
     hold off;
 
     % Third subplot: ZT 0-11 vs ZT 12-23
-    subplot(3, 1, 3);
+    subplot(1, 3, 3);
     hold on;
     b3 = bar([1, 2], [mean_ZT_0_11, mean_ZT_12_23], 'FaceColor', 'flat');
     b3.CData(1,:) = [0.2, 0.2, 0.5]; % Color for ZT 0-11
