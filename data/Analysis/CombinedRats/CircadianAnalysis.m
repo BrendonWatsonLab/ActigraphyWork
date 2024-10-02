@@ -23,7 +23,10 @@ sums48 = [hourlySum.sum_SelectedPixelDifference; hourlySum.sum_SelectedPixelDiff
 figure;
 b1 = bar(hours48, sums48, 'BarWidth', 1);
 addShadedAreaToPlotZT48Hour();
-title('Total Animal Circadian Sums Over 48 Hours');
+title('Total Animal Circadian Sums Over 48 Hours', 'FontSize', 20, 'FontWeight', 'bold'); % Increase font size and bold
+xlabel('Hour of the Day', 'FontSize', 18, 'FontWeight', 'bold'); % Add xlabel with increased font size and bold
+ylabel('Sum of Selected Pixel Difference', 'FontSize', 18, 'FontWeight', 'bold'); % Add ylabel with increased font size and bold
+set(gca, 'FontSize', 14, 'FontWeight', 'bold'); % Increase font size and bold for axis labels
 
 % Ensure the bars are on top
 uistack(b1, 'top'); 
@@ -58,9 +61,10 @@ b1 = bar(hours, difference, 'BarWidth', 1);
 addShadedAreaToPlotZT24Hour();
 
 % Set plot title and labels
-title('Difference in NormalizedActivity: 1000 Lux Week4 - 300 Lux');
-xlabel('Hour of Day');
-ylabel('Difference in NormalizedActivity');
+title('Difference in NormalizedActivity: 1000 Lux Week4 - 300 Lux', 'FontSize', 20, 'FontWeight', 'bold'); % Increase font size and bold
+xlabel('Hour of Day', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
+ylabel('Difference in NormalizedActivity', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
+set(gca, 'FontSize', 14, 'FontWeight', 'bold'); % Increase font size and bold for axis labels
 
 % Ensure the bars are on top
 uistack(b1, 'top');
@@ -69,7 +73,6 @@ uistack(b1, 'top');
 grid on;
 
 %% Line Plots for Differences
-% Extract rows for the 300Lux and 1000Lux4 conditions
 % Extract rows for the 300Lux and 1000Lux4 conditions
 data_300lux = combined_data(strcmp(combined_data.Condition, '300Lux'), :);
 data_1000lux_week4 = combined_data(strcmp(combined_data.Condition, '1000Lux4'), :);
@@ -109,10 +112,11 @@ p3 = plot(hours, difference, '-^', 'DisplayName', 'Difference (1000 Lux Week 4 -
 addShadedAreaToPlotZT24Hour();
 
 % Add plot settings
-title('Mean SelectedPixelDifference and Differences Over 24 Hours');
-xlabel('Hour of Day');
-ylabel('Mean SelectedPixelDifference');
-legend('show', 'Location', 'northeast');
+title('Mean SelectedPixelDifference and Differences Over 24 Hours', 'FontSize', 20, 'FontWeight', 'bold'); % Increase font size and bold
+xlabel('Hour of Day', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
+ylabel('Mean SelectedPixelDifference', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
+legend('show', 'Location', 'northeast', 'FontSize', 14, 'FontWeight', 'bold'); % Increase font size and bold for legend
+set(gca, 'FontSize', 14, 'FontWeight', 'bold'); % Increase font size and bold for axis labels
 grid on;
 
 % Ensure the bars are on top

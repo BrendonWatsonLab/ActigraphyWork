@@ -103,10 +103,10 @@ for j = 1:length(validConditionNames)
      end
 end
 
-xlabel('Hour of the Day');
-ylabel('Normalized Activity');
-title('Normalized Activity Over 48 Hours for All Rats');
-legend(legendEntries, 'Location', 'BestOutside');
+xlabel('Hour of the Day', 'FontSize', 20, 'FontWeight', 'bold');
+ylabel('Normalized Activity', 'FontSize', 20, 'FontWeight', 'bold');
+title('Normalized Activity Over 48 Hours for All Rats', 'FontSize', 20, 'FontWeight', 'bold');
+legend(legendEntries, 'Location', 'BestOutside', 'FontSize', 20);
 hold off;
 
 disp('48-hour z-score normalized activity analysis and plots generated and saved.');
@@ -221,10 +221,10 @@ for j = 1:length(validConditionNames)
     legendEntries{end+1} = conditions{j};
 end
 
-xlabel('Hour of the Day');
-ylabel('Normalized Activity');
-title('Normalized Activity Over 48 Hours for All Conditions');
-legend(legendEntries, 'Location', 'BestOutside');
+xlabel('Hour of the Day', 'FontSize', 20, 'FontWeight', 'bold');
+ylabel('Normalized Activity', 'FontSize', 20, 'FontWeight', 'bold');
+title('Normalized Activity Over 48 Hours for All Conditions', 'FontSize', 20, 'FontWeight', 'bold');
+legend(legendEntries, 'Location', 'BestOutside', 'FontSize', 20);
 hold off;
 
 disp('48-hour z-score normalized activity analysis and plots generated and saved.');

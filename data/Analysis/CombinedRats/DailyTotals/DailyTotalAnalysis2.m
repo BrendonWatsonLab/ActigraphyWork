@@ -101,26 +101,26 @@ set(gca, 'XTickLabel', x_tick_labels);
 hold on;
 section_boundaries = [7.5, 14.5]; % Middle points between day groups
 for b = section_boundaries
-    plot([b b], ylim, 'k--');
+    plot([b b], ylim, 'k--', 'LineWidth', 1.5);
 end
 
-% Add custom x-axis labels below the graph
-text(3.5, min(ylim)-0.05*range(ylim), '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-text(10.5, min(ylim)-0.05*range(ylim), '1000Lux1', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-text(17.5, min(ylim)-0.05*range(ylim), '1000Lux4', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+% Adjust custom x-axis labels below the graph
+text_y_pos = min(ylim)-0.1*range(ylim); % Adjusted y position to avoid overlap
+text(3.5, text_y_pos, '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 20, 'FontWeight', 'bold');
+text(10.5, text_y_pos, '1000Lux1', 'HorizontalAlignment', 'center', 'FontSize', 20, 'FontWeight', 'bold');
+text(17.5, text_y_pos, '1000Lux4', 'HorizontalAlignment', 'center', 'FontSize', 20, 'FontWeight', 'bold');
 
-% Labels and title
-ylabel('Mean Normalized Activity');
-title('Activity Under Different Lighting Conditions');
+% Labels, title, and x-axis adjustment
+ylabel('Mean Normalized Activity', 'FontSize', 20, 'FontWeight', 'bold'); % Larger font size for the y-label
+title('Activity Under Different Lighting Conditions', 'FontSize', 20, 'FontWeight', 'bold');
 xlim([0, length(mean_activity)+1]);
 
 % Improving Visibility and Aesthetics
+set(gca, 'FontSize', 20); % Set the axis tick labels font size
 grid on;
-legend(h, conditions, 'Location', 'Best');
+legend(h, conditions, 'Location', 'Best', 'FontSize', 20);
 hold off;
 %% Creating Per Day Plots
-
-% Unique animals in the dataset
 % Unique animals in the dataset
 uniqueAnimals = unique(combined_data.Rat);
 

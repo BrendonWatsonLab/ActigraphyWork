@@ -74,10 +74,11 @@ function AnalyzeCircadianRunning(datafile, convert_ZT, name)
     b1.CData(3,:) = [0.2, 0.5, 0.2]; % Color for Rest
     errorbar([1, 2, 3], [mean_ZT_22_2, mean_ZT_10_14, mean_rest], [sem_ZT_22_2, sem_ZT_10_14, sem_rest], ...
              'k', 'LineWidth', 1.5, 'LineStyle', 'none');
-    ylabel('Mean of SelectedPixelDifference');
+    ylabel('Mean of SelectedPixelDifference', 'FontSize', 16); % Larger font size for y-axis label
     xticks([1, 2, 3]);
-    xticklabels({'ZT 22-2', 'ZT 10-14', 'Rest of Day'});
-    title('Comparison of Movement: ZT 22-2 vs ZT 10-14 vs Rest of Day');
+    xticklabels({'22-2', '10-14', 'Rest of Day'});
+    set(gca, 'FontSize', 14); % Increase the font size for x-ticks
+    title('Peak Times', 'FontSize', 16); % Larger font size for title
 
     % Add asterisks for statistical significance if p < 0.05
     y_max = max([mean_ZT_22_2 + sem_ZT_22_2, mean_ZT_10_14 + sem_ZT_10_14, mean_rest + sem_rest]) * 1.1;
@@ -86,7 +87,7 @@ function AnalyzeCircadianRunning(datafile, convert_ZT, name)
         plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Left notch
         plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Middle notch
         plot([3 3], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Right notch
-        text(2, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
+        text(2, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center'); % Larger font size for asterisk
     end
     ylim([0, y_max * 1.3]);
     hold off;
@@ -99,10 +100,11 @@ function AnalyzeCircadianRunning(datafile, convert_ZT, name)
     b2.CData(2,:) = [0.5, 0.2, 0.2]; % Color for Lights Off
     errorbar([1, 2], [meanLightsOn, meanLightsOff], [semLightsOn, semLightsOff], ...
              'k', 'LineWidth', 1.5, 'LineStyle', 'none');
-    ylabel('Mean of SelectedPixelDifference');
+    ylabel('Mean of SelectedPixelDifference', 'FontSize', 16); % Larger font size for y-axis label
     xticks([1, 2]);
-    xticklabels({'Lights On (ZT 0-9)', 'Lights Off (ZT 15-23)'});
-    title('Comparison of Movement: Lights On vs Lights Off');
+    xticklabels({'Lights On (0-9)', 'Lights Off (15-23)'});
+    set(gca, 'FontSize', 14); % Increase the font size for x-ticks
+    title('Diurnality Test', 'FontSize', 16); % Larger font size for title
 
     % Add asterisks for statistical significance if p < 0.05
     y_max = max([meanLightsOn + semLightsOn, meanLightsOff + semLightsOff]) * 1.1;
@@ -110,7 +112,7 @@ function AnalyzeCircadianRunning(datafile, convert_ZT, name)
         plot([1, 2], [y_max, y_max], '-k', 'LineWidth', 1.5);
         plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Left notch
         plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Right notch
-        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
+        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center'); % Larger font size for asterisk
     end
     ylim([0, y_max * 1.3]);
     hold off;
@@ -123,10 +125,11 @@ function AnalyzeCircadianRunning(datafile, convert_ZT, name)
     b3.CData(2,:) = [0.5, 0.2, 0.2]; % Color for ZT 12-23
     errorbar([1, 2], [mean_ZT_0_11, mean_ZT_12_23], [sem_ZT_0_11, sem_ZT_12_23], ...
              'k', 'LineWidth', 1.5, 'LineStyle', 'none');
-    ylabel('Mean of SelectedPixelDifference');
+    ylabel('Mean of SelectedPixelDifference', 'FontSize', 16); % Larger font size for y-axis label
     xticks([1, 2]);
-    xticklabels({'ZT 0-11', 'ZT 12-23'});
-    title('Comparison of Movement: ZT 0-11 vs ZT 12-23');
+    xticklabels({'0-11', '12-23'});
+    set(gca, 'FontSize', 14); % Increase the font size for x-ticks
+    title('Lights On vs Lights Off', 'FontSize', 16); % Larger font size for title
 
     % Add asterisks for statistical significance if p < 0.05
     y_max = max([mean_ZT_0_11 + sem_ZT_0_11, mean_ZT_12_23 + sem_ZT_12_23]) * 1.1;
@@ -134,11 +137,11 @@ function AnalyzeCircadianRunning(datafile, convert_ZT, name)
         plot([1, 2], [y_max, y_max], '-k', 'LineWidth', 1.5);
         plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Left notch
         plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Right notch
-        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
+        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center'); % Larger font size for asterisk
     end
     ylim([0, y_max * 1.3]);
     hold off;
 
     % Add overall title for the figure
-    sgtitle(['Circadian Running Analysis: ', name]);
+    sgtitle(['Circadian Running Analysis: ', name], 'FontSize', 20); % Larger font size for super title
 end

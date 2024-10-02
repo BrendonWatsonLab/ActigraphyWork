@@ -4,7 +4,6 @@ ratIDs = {'Rollo', 'Canute', 'Harald', 'Gunnar', 'Egil', 'Sigurd', 'Olaf'}; % Ad
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
 
 dataDir = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/ZT';
-
 combinedData = Normalizer(dataDir, ratIDs, conditions);
 
 %% Plotting
@@ -16,9 +15,9 @@ means = zeros(length(conditions), 1);
 stderr = zeros(length(conditions), 1);
 
 % Group data for each condition
-data300Lux = combinedData.SelectedPixelDifference(strcmp(combinedData.Condition, '300Lux'));
-data1000Lux1 = combinedData.SelectedPixelDifference(strcmp(combinedData.Condition, '1000Lux1'));
-data1000Lux4 = combinedData.SelectedPixelDifference(strcmp(combinedData.Condition, '1000Lux4'));
+data300Lux = combinedData.NormalizedActivity(strcmp(combinedData.Condition, '300Lux'));
+data1000Lux1 = combinedData.NormalizedActivity(strcmp(combinedData.Condition, '1000Lux1'));
+data1000Lux4 = combinedData.NormalizedActivity(strcmp(combinedData.Condition, '1000Lux4'));
 
 % Calculate means and standard errors
 means(1) = mean(data300Lux);
@@ -46,41 +45,41 @@ figure;
 bar(means);
 hold on;
 errorbar(1:length(conditions), means, stderr, 'k', 'LineStyle', 'none');
-set(gca, 'XTickLabel', conditions);
-ylabel('Normalized Activity (z-score)');
-title('Comparison of Activity Across Lighting Conditions');
+set(gca, 'XTickLabel', conditions, 'FontSize', 14, 'FontWeight', 'bold');  % Increase font size and bold
+ylabel('Normalized Activity (z-score)', 'FontSize', 18, 'FontWeight', 'bold');  % Increase font size and bold
+title('Comparison of Activity Across Lighting Conditions', 'FontSize', 20, 'FontWeight', 'bold');  % Increase font size and bold
 
 % Add significance markers
-y_max = max([means(1) + stderr(1),means(2) + stderr(2), means(3) + stderr(3)]) * 1.1; % Adjust these values as needed for clarity
+y_max = max([means(1) + stderr(1), means(2) + stderr(2), means(3) + stderr(3)]) * 1.1; % Adjust these values as needed for clarity
 line_y = y_max;
 
 % Add asterisk and lines for first comparison (300 Lux Week 1 vs 1000 Lux Week 1)
-    if p1 < 0.05
-        plot([1, 2], [line_y, line_y], '-k', 'LineWidth', 1.5);
-        plot([1 1], [line_y * 0.95, line_y], '-k', 'LineWidth', 1.5); % Left notch
-        plot([2 2], [line_y * 0.95, line_y], '-k', 'LineWidth', 1.5); % Right notch
-        text(1.5, line_y * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
-    end
-    
-    % Add asterisk and lines for second comparison (300 Lux Week 1 vs 1000 Lux Week 4)
-    if p2 < 0.05
-        y_max2 = line_y * 1.15;
-        plot([1, 3], [y_max2, y_max2], '-k', 'LineWidth', 1.5);
-        plot([1 1], [y_max2 * 0.95, y_max2], '-k', 'LineWidth', 1.5); % Left notch
-        plot([3 3], [y_max2 * 0.95, y_max2], '-k', 'LineWidth', 1.5); % Right notch
-        text(2, y_max2 * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
-        y_max = y_max2; % Update y_max to the new height
-    end
+if p1 < 0.05
+    plot([1, 2], [line_y, line_y], '-k', 'LineWidth', 1.5);
+    plot([1 1], [line_y * 0.95, line_y], '-k', 'LineWidth', 1.5); % Left notch
+    plot([2 2], [line_y * 0.95, line_y], '-k', 'LineWidth', 1.5); % Right notch
+    text(1.5, line_y * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold'); % Increase font size and bold
+end
 
-    % Add asterisk and lines for third comparison (1000 Lux Week 1 vs 1000 Lux Week 4)
-    if p3 < 0.05
-        plot([2, 3], [line_y, line_y], '-k', 'LineWidth', 1.5);
-        plot([2 2], [line_y * 0.95, line_y], '-k', 'LineWidth', 1.5); % Left notch
-        plot([3 3], [line_y * 0.95, line_y], '-k', 'LineWidth', 1.5); % Right notch
-        text(2.5, line_y * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
-    end
-    
-    ylim([-0.05, y_max * 1.3]); % Adjust the y-axis limits to accommodate the significance lines and asterisks
+% Add asterisk and lines for second comparison (300 Lux Week 1 vs 1000 Lux Week 4)
+if p2 < 0.05
+    y_max2 = line_y * 1.15;
+    plot([1, 3], [y_max2, y_max2], '-k', 'LineWidth', 1.5);
+    plot([1 1], [y_max2 * 0.95, y_max2], '-k', 'LineWidth', 1.5); % Left notch
+    plot([3 3], [y_max2 * 0.95, y_max2], '-k', 'LineWidth', 1.5); % Right notch
+    text(2, y_max2 * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold'); % Increase font size and bold
+    y_max = y_max2; % Update y_max to the new height
+end
+
+% Add asterisk and lines for third comparison (1000 Lux Week 1 vs 1000 Lux Week 4)
+if p3 < 0.05
+    plot([2, 3], [line_y, line_y], '-k', 'LineWidth', 1.5);
+    plot([2 2], [line_y * 0.95, line_y], '-k', 'LineWidth', 1.5); % Left notch
+    plot([3 3], [line_y * 0.95, line_y], '-k', 'LineWidth', 1.5); % Right notch
+    text(2.5, line_y * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold'); % Increase font size and bold
+end
+
+ylim([-0.05, y_max * 1.3]); % Adjust the y-axis limits to accommodate the significance lines and asterisks
 
 hold off;
 

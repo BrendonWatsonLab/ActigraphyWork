@@ -4,7 +4,7 @@
 % fprintf('Reading in table');
 
 % reads in data from .csv
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ZT/CombinedRelDaysBinned.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/ZT/CombinedRelDaysBinned.csv');
 
 %% Plotting Combined Stuff
 conditions = {'300Lux', '1000Lux1', '1000Lux4'};
