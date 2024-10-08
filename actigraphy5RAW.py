@@ -205,17 +205,17 @@ if __name__ == "__main__":
     parser.add_argument('--video_folder', type=str, help='Path to a folder containing video files.')
     parser.add_argument('--oaf', action='store_true', help='Override Actigraphy Files.')
     parser.add_argument('--output_directory', type=str, help='Output directory for CSV files.')
+    parser.add_argument('--name_stamp', action='store_true', help='Generate creation time from the video file name.')
 
     args = parser.parse_args()
 
-    name_stamp = None
     set_roi = False
 
     processor = ActigraphyProcessor()
 
     if args.video_file:
-        processor.process_single_video_file(args.video_file, name_stamp, set_roi, args.output_directory)
+        processor.process_single_video_file(args.video_file, args.name_stamp, set_roi, args.output_directory)
     elif args.video_folder:
-        processor.process_video_files(args.video_folder, args.oaf, set_roi, name_stamp, args.output_directory)
+        processor.process_video_files(args.video_folder, args.oaf, set_roi, args.name_stamp, args.output_directory)
     else:
         print("Please provide either a video file or a video folder.")
