@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# includes updated logic and file sorting, etc
+
 import cv2
 import csv
 import sys

@@ -1,3 +1,5 @@
+# exact same logic as v5, except using tkinter instead of pyqt5
+
 import cv2
 import csv
 import sys

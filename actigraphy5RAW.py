@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# this does not include any GUI functionality. 
+# meant for use on Great Lakes only, requires only a command line. Input is as follows:
+# python3 actigraphy5RAW.py --video_folder '/path' --output_directory '/path' --oaf --name_stamp
+# also includes multiprocessing capability, mostly for great lakes 5 cores
+
+#!/usr/bin/env python3
 import cv2
 import csv
 import sys
@@ -9,7 +15,7 @@ import numpy as np
 import re
 import datetime
 from datetime import datetime
-from multiprocessing import Pool
+from multiprocessing import Pool, Manager, Lock
 
 class ActigraphyProcessor:
     def __init__(self, min_size_threshold=120, global_threshold=15, percentage_threshold=25, dilation_kernel=4, output_file_path=None, roi_pts=None):
@@ -39,7 +45,7 @@ class ActigraphyProcessor:
         
         return result_files
 
-    def process_single_video_file(self, video_file, name_stamp, set_roi, output_directory, roi_pts=None):
+    def process_single_video_file(self, video_file, name_stamp, set_roi, output_directory, roi_pts, progress_dict, lock):
         # Determine whether to use creation time from the file name or os.path.getctime
         if name_stamp:
             print("Extracting creation time from the name.")
@@ -90,13 +96,17 @@ class ActigraphyProcessor:
                         result_rows = []
 
                 prev_frame = frame
-                if frame_number % 100 == 0:
-                    progress = (frame_number / total_frames) * 100
-                    print(f"Progress: {progress:.2f}%")
 
             writer.writerows(result_rows)
             cap.release()
             print(f"Actigraphy processing completed for {video_file}")
+
+        # Update the progress
+        with lock:
+            progress_dict[video_file] = 1
+            completed_files = sum(progress_dict.values())
+            total_files = len(progress_dict)
+            print(f"Folder progress: {completed_files}/{total_files} files completed ({(completed_files / total_files) * 100:.2f}%)")
 
     def process_video_files(self, video_folder, oaf, set_roi, name_stamp, output_directory):
         nested_folders = self.get_nested_paths(video_folder)
@@ -117,9 +127,12 @@ class ActigraphyProcessor:
                 self.roi_pts = self._select_roi_from_first_frame(cap)
                 cap.release()
 
-        # Parallel processing of video files
-        pool = Pool()
-        pool.starmap(self.process_single_video_file, [(file, name_stamp, set_roi, output_directory, self.roi_pts) for file in all_mp4_files])
+        manager = Manager()
+        progress_dict = manager.dict({file: 0 for file in all_mp4_files})
+        lock = manager.Lock()
+
+        pool = Pool(processes=min(5, os.cpu_count())) # Using up to 5 cores or the number of available cores.
+        pool.starmap(self.process_single_video_file, [(file, name_stamp, set_roi, output_directory, self.roi_pts, progress_dict, lock) for file in all_mp4_files])
 
     def get_nested_paths(self, root_dir):
         queue = [root_dir]
@@ -214,7 +227,7 @@ if __name__ == "__main__":
     processor = ActigraphyProcessor()
 
     if args.video_file:
-        processor.process_single_video_file(args.video_file, args.name_stamp, set_roi, args.output_directory)
+        processor.process_single_video_file(args.video_file, args.name_stamp, set_roi, args.output_directory, None, None, None)
     elif args.video_folder:
         processor.process_video_files(args.video_folder, args.oaf, set_roi, args.name_stamp, args.output_directory)
     else:
