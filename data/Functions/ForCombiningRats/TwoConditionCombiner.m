@@ -88,6 +88,7 @@ function TwoConditionCombiner(parentDir, folder_name, lights_on_hour)
         isBeforeLightsOn = hours(timeofday(zt_datetimes)) < 0;
         zt_datetimes(isBeforeLightsOn) = zt_datetimes(isBeforeLightsOn) + hours(24);
         data.Date = zt_datetimes;
+        adjustedData = data; % Assign the modified data to the output variable
     end
 
     % Apply ZT conversion for both datasets
@@ -105,4 +106,5 @@ function TwoConditionCombiner(parentDir, folder_name, lights_on_hour)
     % Notify the user that the process is complete.
     disp('Done');
 end
+
 
