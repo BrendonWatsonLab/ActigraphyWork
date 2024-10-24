@@ -12,7 +12,7 @@ end
 binnedData = table('Size', [0, width(data)], 'VariableTypes', varfun(@class, data, 'OutputFormat', 'cell'), ...
                    'VariableNames', data.Properties.VariableNames);
 
-rats = unique(data.Rat);
+rats = unique(data.Animal);
 conditions = unique(data.Condition);
 
 for r = 1:length(rats)
@@ -20,7 +20,7 @@ for r = 1:length(rats)
     for c = 1:length(conditions)
         condition = conditions{c};
         fprintf('Binning %s: %s \n', rat, condition);
-        thisData = data(strcmp(data.Rat, rat) & strcmp(data.Condition, condition), :);
+        thisData = data(strcmp(data.Animal, rat) & strcmp(data.Condition, condition), :);
 
         if isempty(thisData)
             fprintf('No data found \n');

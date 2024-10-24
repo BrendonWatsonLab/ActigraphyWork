@@ -17,10 +17,3 @@ binned_data = Binner('/home/noahmu/Documents/JeremyData/ActigraphyOnly/Combined_
 
 %% Cleaning data
 
-rowsToDelete = binned_data.RelativeDay > 40;
-
-daysDeleting = binned_data(rowsToDelete, :);
-disp(daysDeleting);
-new_binned = binned_data(~rowsToDelete, :);
-
-writetable(new_binned, 'binned_data.csv');
