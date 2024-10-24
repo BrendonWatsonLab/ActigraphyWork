@@ -1,4 +1,4 @@
-function TwoConditionCombiner(parentDir, folder_name, lights_on_hour)
+function TwoConditionCombiner(parentDir, folder_name, lights_on_hour_DST, lights_on_hour_nonDST)
     dataDir = fullfile(parentDir, folder_name);
     
     % Define the names of the combined files for each condition
@@ -79,12 +79,26 @@ function TwoConditionCombiner(parentDir, folder_name, lights_on_hour)
     end
 
     % Logic to convert to ZT
-    lightsOn = hours(lights_on_hour);
-    
+    % Function to determine which lights on hour to use based on DST status
+    function lights_on_hour = determineLightsOnHour(datetimeCol)
+        % Define DST start and end dates
+        DST_start = datetime(year(datetimeCol), 3, 10, 'TimeZone', 'America/New_York'); % approximate start
+        DST_end = datetime(year(datetimeCol), 11, 3, 'TimeZone', 'America/New_York');  % approximate end
+
+        % Determine whether each date falls within the DST period
+        isDST = (datetimeCol >= DST_start) & (datetimeCol < DST_end);
+        
+        % Assign the appropriate lights on hour based on DST status
+        lights_on_hour = zeros(size(datetimeCol));
+        lights_on_hour(isDST) = lights_on_hour_DST;
+        lights_on_hour(~isDST) = lights_on_hour_nonDST;
+    end
+
     % Function to adjust Zeitgeber time across both dataframes
     function adjustedData = adjustZT(data)
         datetimeCol = data.Date;
-        zt_datetimes = datetimeCol - lightsOn;
+        lightsOnHours = determineLightsOnHour(datetimeCol);
+        zt_datetimes = datetimeCol - hours(lightsOnHours);
         isBeforeLightsOn = hours(timeofday(zt_datetimes)) < 0;
         zt_datetimes(isBeforeLightsOn) = zt_datetimes(isBeforeLightsOn) + hours(24);
         data.Date = zt_datetimes;
@@ -106,5 +120,4 @@ function TwoConditionCombiner(parentDir, folder_name, lights_on_hour)
     % Notify the user that the process is complete.
     disp('Done');
 end
-
 

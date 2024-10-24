@@ -500,30 +500,18 @@ class ActigraphyProcessor:
 
     @staticmethod
     def _get_creation_time_from_name(filename):
-        # New regex pattern to match 'YYYYMMDD_HH-MM-SS.SSS'
-        regex_pattern = r'(\d{8}_\d{2}-\d{2}-\d{2}\.\d{3})'
-        
-        # Try matching the new regex pattern
+        # Updated regex pattern and datetime format
+        regex_pattern = r'(\d{8}_\d{6})'
         match = re.search(regex_pattern, os.path.basename(filename))
         
         if match:
-            # Extract the matched date and time
             date_time_str = match.group(1)
-            print(f"Extracted date time string: {date_time_str}")  # Debug print
-            
-            # Include milliseconds in the format
-            date_time_format = '%Y%m%d_%H-%M-%S.%f'
-            
-            # Convert the date and time string to a datetime object
+            date_time_format = '%Y%m%d_%H%M%S'
             date_time_obj = datetime.strptime(date_time_str, date_time_format)
-            print(f"Parsed datetime object: {date_time_obj}")  # Debug print
-            
-            # Get the POSIX timestamp in milliseconds
             posix_timestamp_ms = int(date_time_obj.timestamp() * 1000)
-            
             return posix_timestamp_ms
         else:
-            print("Failed to extract creation time from the file name. Using file generated time instead.")
+            print(f"Failed to extract creation time from the file name. Using file generated time instead.")
             return int(os.path.getctime(filename) * 1000)
 
 

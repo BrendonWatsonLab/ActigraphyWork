@@ -198,12 +198,13 @@ class ActigraphyProcessor:
 
     @staticmethod
     def _get_creation_time_from_name(filename):
-        regex_pattern = r'(\d{8}_\d{2}-\d{2}-\d{2}\.\d{3})'
+        # Updated regex pattern and datetime format
+        regex_pattern = r'(\d{8}_\d{6})'
         match = re.search(regex_pattern, os.path.basename(filename))
         
         if match:
             date_time_str = match.group(1)
-            date_time_format = '%Y%m%d_%H-%M-%S.%f'
+            date_time_format = '%Y%m%d_%H%M%S'
             date_time_obj = datetime.strptime(date_time_str, date_time_format)
             posix_timestamp_ms = int(date_time_obj.timestamp() * 1000)
             return posix_timestamp_ms

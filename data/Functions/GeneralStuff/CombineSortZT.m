@@ -1,4 +1,4 @@
-function CombineSortZT(parentDir, folder_name, lights_on_hour)
+function CombineSortZT(parentDir, folder_name, lights_on_hour_DST, lights_on_hour_nonDST)
     dataDir = fullfile(parentDir, folder_name);
     
     % Define the name of the combined file
@@ -48,7 +48,7 @@ function CombineSortZT(parentDir, folder_name, lights_on_hour)
         error('PositTime column not found in the combined data.');
     end
     
-    % Delete unnecessary columns (Frame and TimeElapsed)
+    % Delete unnecessary columns (Frame)
     sortedCombinedData = removevars(sortedCombinedData, {'Frame'});
 
     % Convert 'PositTime' from milliseconds to seconds
@@ -68,16 +68,30 @@ function CombineSortZT(parentDir, folder_name, lights_on_hour)
         error('The dataset does not contain a ''Date'' column.');
     end
 
-    % Determine the "lights on" time (e.g., 5 AM as ZT0)
-    lightsOn = hours(lights_on_hour);
-
     % Extract the 'Date' column from the dataset
     datetimeCol = sortedCombinedData.Date;
+
+    % Determine whether each date falls within the DST period and assign the appropriate
+    % lights on hour.
+    % Define DST start and end dates
+    DST_start = datetime(year(datetimeCol), 3, 10, 'TimeZone', 'America/New_York'); % approximate start
+    DST_end = datetime(year(datetimeCol), 11, 3, 'TimeZone', 'America/New_York');  % approximate end
+
+    % Determine whether each date falls within the DST period
+    isDST = (datetimeCol >= DST_start) & (datetimeCol < DST_end);
+    
+    % Assign the appropriate lights on hour based on DST status
+    lightsOn_hours = zeros(size(datetimeCol));
+    lightsOn_hours(isDST) = lights_on_hour_DST;
+    lightsOn_hours(~isDST) = lights_on_hour_nonDST;
+
+    % Determine the "lights on" time (ZT0)
+    lightsOn = hours(lightsOn_hours);
 
     % Subtract 'lights on' time from each datetime entry to get Zeitgeber time
     zt_datetimes = datetimeCol - lightsOn;
 
-    % Wrap negative times to the previous day (e.g., if before ZT0, then it is ZT>0 of the previous day)
+    % Wrap negative times to the previous day
     isBeforeLightsOn = hours(timeofday(zt_datetimes)) < 0;
     zt_datetimes(isBeforeLightsOn) = zt_datetimes(isBeforeLightsOn) + hours(24);
 
