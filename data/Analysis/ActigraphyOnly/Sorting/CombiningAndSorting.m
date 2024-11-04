@@ -15,3 +15,12 @@ TwoConditionCombiner('/nfs/turbo/umms-brendonw/JeremyData/GrassRatActigraphyOnly
 TwoConditionCombiner('/nfs/turbo/umms-brendonw/JeremyData/GrassRatActigraphyOnlyData/Cohort2Data','AO6', 6, 5);
 TwoConditionCombiner('/nfs/turbo/umms-brendonw/JeremyData/GrassRatActigraphyOnlyData/Cohort2Data','AO7', 6, 5);
 TwoConditionCombiner('/nfs/turbo/umms-brendonw/JeremyData/GrassRatActigraphyOnlyData/Cohort2Data','AO8', 6, 5);
+
+%% AO5-8 DARK
+CombineSortZT('/nfs/turbo/umms-brendonw/JeremyData/GrassRatActigraphyOnlyData/Cohort2DARKdata', 'AO5', 6, 5);
+CombineSortZT('/nfs/turbo/umms-brendonw/JeremyData/GrassRatActigraphyOnlyData/Cohort2DARKdata', 'AO6', 6, 5);
+CombineSortZT('/nfs/turbo/umms-brendonw/JeremyData/GrassRatActigraphyOnlyData/Cohort2DARKdata', 'AO7', 6, 5);
+CombineSortZT('/nfs/turbo/umms-brendonw/JeremyData/GrassRatActigraphyOnlyData/Cohort2DARKdata', 'AO8', 6, 5);
+
+% Halfdan
+CombineSortZT('/nfs/turbo/umms-brendonw/JeremyData/GrassRatActigraphyOnlyData', 'HalfdanData', 6, 5);

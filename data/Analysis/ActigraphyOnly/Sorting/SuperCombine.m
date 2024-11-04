@@ -24,3 +24,5 @@ disp(daysDeleting);
 new_binned = binned_data(~rowsToDelete, :);
 
 writetable(new_binned, 'binned_data.csv');
+
+

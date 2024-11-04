@@ -34,10 +34,10 @@ end
 
 % Load raw data files for animals AO5-8
 disp('Loading new data for animals AO5-AO8...');
-newData_AO5 = readtable(fullfile(rootFolder, 'AO5_combined_data.csv'));
-newData_AO6 = readtable(fullfile(rootFolder, 'AO6_combined_data.csv'));
-newData_AO7 = readtable(fullfile(rootFolder, 'AO7_combined_data.csv'));
-newData_AO8 = readtable(fullfile(rootFolder, 'AO8_combined_data.csv'));
+newData_AO5 = readtable(fullfile(rootFolder, 'raw_data_AO5.csv'));
+newData_AO6 = readtable(fullfile(rootFolder, 'raw_data_AO6.csv'));
+newData_AO7 = readtable(fullfile(rootFolder, 'raw_data_AO7.csv'));
+newData_AO8 = readtable(fullfile(rootFolder, 'raw_data_AO8.csv'));
 
 % Convert 'Date' fields to datetime objects for new data
 disp('Converting Date columns in new data...');
@@ -50,7 +50,7 @@ newData_AO8.Date = datetime(newData_AO8.Date, 'InputFormat', 'yyyy-MM-dd HH:mm:s
 disp('Initializing data storage for new data...');
 newData = {newData_AO5, newData_AO6, newData_AO7, newData_AO8};
 
-%% Normalize and bin data for each animal
+% Normalize and bin data for each animal
 combinedNewData = table(); % Initialize an empty table to hold all new data
 for i = 1:length(animals_new)
     animal = animals_new{i};
@@ -118,25 +118,18 @@ for i = 1:length(animals_new)
     disp('Creating final table for this animal...');
     new_data_binned = new_data_binned(:, {'Date', 'SelectedPixelDifference', 'NormalizedActivity', 'Animal', 'Condition'});
     
-    % Save to combinedNewData for combination later
+    % Save to newData array for combination later
     disp(['Saving processed data for ', animal, '...']);
     combinedNewData = [combinedNewData; new_data_binned];
 end
 
-% Ensure combined new data has the required column 'RelativeDay' in the correct order
+% Ensure combined new data has the required column 'RelativeDay'
 combinedNewData.RelativeDay = zeros(height(combinedNewData), 1);  % Add a column of zeros for RelativeDay
-
-% Reorder columns to match existingData order before combining
-combinedNewData = combinedNewData(:, existingData.Properties.VariableNames);
-
-% Print combinedNewData column names for debugging
-disp('New data column names:');
-disp(combinedNewData.Properties.VariableNames);
 
 % Combine new data with existing data
 disp('Combining new data with existing data...');
 assert(isequal(existingData.Properties.VariableNames, combinedNewData.Properties.VariableNames), ...
-    'Mismatch in table variables between existing and new data');
+        'Mismatch in table variables between existing and new data');
 combinedData = vertcat(existingData, combinedNewData);
 
 % Sort combined data by Date

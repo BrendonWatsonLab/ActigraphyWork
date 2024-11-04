@@ -7,7 +7,7 @@ combined_data = table('Size', [0, 5], ...
 
 for a = 1:length(animals)
     animal = animals{a};
-    animalFile_300Lux = fullfile(rootFolder, [animal '_300Lux_combined_data.csv']);
+    animalFile_300Lux = fullfile(rootFolder, [animal '_300Lux.csv']);
     
     fprintf('Processing data for animal: %s\n', animal);
     
@@ -32,7 +32,7 @@ for a = 1:length(animals)
     % Now normalize and combine all conditions for this animal
     for c = 1:length(conditions)
         condition = conditions{c};
-        conditionFile = fullfile(rootFolder, [animal '_' condition '_combined_data.csv']);
+        conditionFile = fullfile(rootFolder, [animal '_' condition '.csv']);
         
         if ~isfile(conditionFile)
             fprintf('%s data file not found for animal: %s. Skipping this condition.\n', condition, animal);
