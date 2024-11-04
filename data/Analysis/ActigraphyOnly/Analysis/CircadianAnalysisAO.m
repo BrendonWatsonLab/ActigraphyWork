@@ -3,7 +3,7 @@
 %% Reading in data
 % reading in data, already in ZT form 
 convertZT = false;
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/binned_data.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8binned_data.csv');
 %% Wrangling hourly bins and plotting bar graphs
 % plots bars of ZT 0-10 and 15-24 as well as 10-14 vs rest
 

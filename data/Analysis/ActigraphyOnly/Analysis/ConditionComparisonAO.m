@@ -1,6 +1,6 @@
 %% Combining and Normalizing Data
 % List of rat IDs and conditions
-combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/binned_data.csv');
+combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8binned_data.csv');
 
 %% Plotting
 % List of conditions for plotting

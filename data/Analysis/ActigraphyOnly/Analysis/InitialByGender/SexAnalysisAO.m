@@ -5,7 +5,7 @@ genders = {'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female
 conditions = {'300Lux', '1000Lux'};
 
 % Read the combined data table
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/binned_data.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8binned_data.csv');
 
 %% Analyze Circadian Running
 AnalyzeCircadianRunningGender(combined_data, false, 'All Rats');

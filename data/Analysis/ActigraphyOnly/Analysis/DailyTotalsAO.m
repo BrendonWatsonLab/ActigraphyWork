@@ -1,13 +1,12 @@
-
 %% Reading in table
 fprintf('Reading in table\n');
 
 % reads in data from .csv
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/binned_data.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8binned_data.csv');
 
 %% Plotting
 conditions = {'300Lux', '1000Lux'};
-day_range = 1:35;
+day_range = 1:40;
 % Now, aggregate and average the data by relative day and condition
 fprintf('Aggregating and averaging data by relative day, condition, and animal...\n');
 allAnimalData = {};
@@ -16,7 +15,7 @@ colors = {'b', 'r'}; % Colors for each condition
 % Compute mean normalized activity for each animal per day per condition
 for c = 1:length(conditions)
     condition = conditions{c};
-    for day = day_range % Up to 35 days per condition
+    for day = day_range % Up to 40 days per condition
         uniqueAnimals = unique(combined_data.Animal);
         for a = 1:length(uniqueAnimals)
             animal = uniqueAnimals{a};
