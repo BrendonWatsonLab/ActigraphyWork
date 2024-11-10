@@ -1,58 +1,92 @@
+%% Analysis of Rat Activity Data
+% This script analyzes activity data of 8 rats under different lighting conditions,
+% accounting for gender differences. The main steps include:
+% 1. Assigning gender to each data point.
+% 2. Classifying 1000Lux data into 'Start' and 'End' conditions.
+% 3. Performing circadian running analysis.
+% 4. Normalizing activity data and analyzing peak activity.
+% 5. Plotting 48-hour and 24-hour activity profiles by gender and condition.
+% 6. Calculating and plotting differences in activity between conditions.
+
 %% Parameters
-% List of animal IDs, conditions, and genders
 animalIDs = {'AO1', 'AO2', 'AO3', 'AO4', 'AO5', 'AO6', 'AO7', 'AO8'};
 genders = {'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female'};
-conditions = {'300Lux', '1000Lux'};
+conditions = {'300Lux', '1000LuxStart', '1000LuxEnd'};
 
 % Read the combined data table
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8binned_data.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8Dark_binned_data.csv');
+
+% Display the column names to verify
+disp('Column names in the data:');
+disp(combined_data.Properties.VariableNames);
+
+% Assuming 'NormalizedActivity' and other columns of interest
+normalizedActivityColumn = 'NormalizedActivity';
+
+%% Assign each data point a gender
+combined_data.Gender = cell(height(combined_data), 1); % Initialize Gender column
+for i = 1:length(animalIDs)
+    animalIndices = strcmp(combined_data.Animal, animalIDs{i});
+    combined_data.Gender(animalIndices) = repmat({genders{i}}, sum(animalIndices), 1); % Use curly braces to encapsulate in a cell array
+end
+
+%% Segmentation of 1000Lux into Start and End conditions
+combined_data.Subcondition = combined_data.Condition;
+for i = 1:length(animalIDs)
+    animalID = animalIDs{i};
+    % Filter data for `1000Lux` condition
+    animal_1000Lux_data = combined_data(strcmp(combined_data.Animal, animalID) & strcmp(combined_data.Condition, '1000Lux'), :);
+    
+    if ~isempty(animal_1000Lux_data)
+        unique_days = unique(floor(animal_1000Lux_data.RelativeDay));
+        if length(unique_days) >= 14
+            % First 7 days
+            start_days = unique_days(1:7);
+            start_indices = strcmp(combined_data.Animal, animalID) & strcmp(combined_data.Condition, '1000Lux') & ismember(floor(combined_data.RelativeDay), start_days);
+            combined_data.Subcondition(start_indices) = {'1000LuxStart'};
+            
+            % Last 7 days
+            end_days = unique_days(end-6:end);
+            end_indices = strcmp(combined_data.Animal, animalID) & strcmp(combined_data.Condition, '1000Lux') & ismember(floor(combined_data.RelativeDay), end_days);
+            combined_data.Subcondition(end_indices) = {'1000LuxEnd'};
+        end
+    end
+end
 
 %% Analyze Circadian Running
+% Utilize a custom function for this specific analysis
 AnalyzeCircadianRunningGender(combined_data, false, 'All Rats');
 
 %% Peak Analysis AO
-
 normalizedActivity = struct();
+validConditionNames = strcat('Cond', conditions);
 
-% Normalize condition names to be valid field names
-validConditionNames = strcat('Cond_', conditions);
-
-% Loop over each animal and condition
 for i = 1:length(animalIDs)
     animalID = animalIDs{i};
     gender = genders{i};
-    
-    for j = 1:length(conditions)
-        condition = conditions{j};   
-        validCondition = validConditionNames{j};
-        
-        % Filter data for the current animal and condition
-        dataTable = combined_data(strcmp(combined_data.Animal, animalID) & strcmp(combined_data.Condition, condition), :);
 
-        % Check if there is data for this combination
+    for j = 1:length(conditions)
+        subcondition = conditions{j};  
+        validSubcondition = validConditionNames{j};
+        
+        dataTable = combined_data(strcmp(combined_data.Animal, animalID) & strcmp(combined_data.Subcondition, subcondition), :);
+        
         if ~isempty(dataTable)
-            fprintf('Analyzing: Animal %s under %s\n', animalID, condition);
+            fprintf('Analyzing: Animal %s under %s\n', animalID, subcondition);
             
             if ismember('Date', dataTable.Properties.VariableNames) && ismember('SelectedPixelDifference', dataTable.Properties.VariableNames)
                 dateData = dataTable.Date; 
                 activityData = dataTable.SelectedPixelDifference; 
                 
-                % Extract hour from datetime data
                 hours = hour(dateData);
-                
-                % Bin data by hour (1-hour bins)
                 edges = 0:24;
                 binIndices = discretize(hours, edges);
-                
-                % Remove NaN and zero indices
                 validIndices = binIndices > 0;
                 binIndices = binIndices(validIndices);
                 activityData = activityData(validIndices);
                 
-                % Calculate sum of activity for each bin
                 binnedActivity = accumarray(binIndices, activityData, [24, 1], @sum, NaN);
                 
-                % Calculate z-score normalization for the binned activity
                 meanActivity = mean(binnedActivity, 'omitnan');
                 stdActivity = std(binnedActivity, 'omitnan');
                 
@@ -61,64 +95,50 @@ for i = 1:length(animalIDs)
                 else
                     zscoredActivity = (binnedActivity - meanActivity) / stdActivity;
                 end
-                
-                % Duplicate the 24-hour data to cover 48 hours
+
                 zscoredActivity48 = [zscoredActivity; zscoredActivity];
                 
-                % Store results for each gender and condition
                 if ~isfield(normalizedActivity, gender)
                     normalizedActivity.(gender) = struct();
                 end
                 
-                if ~isfield(normalizedActivity.(gender), validCondition)
-                    normalizedActivity.(gender).(validCondition) = [];
+                if ~isfield(normalizedActivity.(gender), validSubcondition)
+                    normalizedActivity.(gender).(validSubcondition) = [];
                 end
                 
-                normalizedActivity.(gender).(validCondition) = [normalizedActivity.(gender).(validCondition); zscoredActivity48'];
+                normalizedActivity.(gender).(validSubcondition) = [normalizedActivity.(gender).(validSubcondition); zscoredActivity48'];
             else
-                fprintf('Column "Date" or "SelectedPixelDifference" not found for Animal %s under %s\n', animalID, condition);
+                fprintf('Column "Date" or "SelectedPixelDifference" not found for Animal %s under %s\n', animalID, subcondition);
             end
         else
-            fprintf('No data found for Animal %s under %s\n', animalID, condition);
+            fprintf('No data found for Animal %s under %s\n', animalID, subcondition);
         end
+        
     end
 end
 
 figure;
 hold on;
-
-% Add gray shading from ZT = 12 to ZT = 23
 fill([12 23 23 12], [-3 -3 4 4], [0.7 0.7 0.7], 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off');
-% Add gray shading from ZT = 36 to ZT = 47
 fill([36 47 47 36], [-3 -3 4 4], [0.7 0.7 0.7], 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off');
 
-% Plot average activity for each gender and condition
+colors = lines(6);
 legendEntries = {};
 
 for j = 1:length(validConditionNames)
-    validCondition = validConditionNames{j};
-    
-    % Ensure correct gender assignments
+    validSubcondition = validConditionNames{j};
     genderList = {'Male', 'Female'};
     for genderIdx = 1:length(genderList)
-        gender = genderList{genderIdx};  % Access 'Male' and 'Female' based on list elements
+        gender = genderList{genderIdx};
         
-        if isfield(normalizedActivity, gender) && isfield(normalizedActivity.(gender), validCondition)
-            % Calculate the mean activity over all animals for this gender and condition
-            meanBinnedActivity48 = mean(normalizedActivity.(gender).(validCondition), 1, 'omitnan');
+        if isfield(normalizedActivity, gender) && isfield(normalizedActivity.(gender), validSubcondition)
+            meanBinnedActivity48 = mean(normalizedActivity.(gender).(validSubcondition), 1, 'omitnan');
+            colorIdx = (j - 1) * 2 + genderIdx;
             
-            % Assign colors based on gender
-            if strcmp(gender, 'Male')
-                color = 'b';  % Blue for Male
-            elseif strcmp(gender, 'Female')
-                color = 'r';  % Red for Female
-            end
-
-            % Plot the mean activity for this gender and condition
-            plot(0:47, meanBinnedActivity48, 'DisplayName', sprintf('%s - %s', gender, conditions{j}), 'Color', color, 'LineWidth', 2);
+            plot(0:47, meanBinnedActivity48, 'DisplayName', sprintf('%s - %s', gender, validSubcondition), 'Color', colors(colorIdx, :), 'LineWidth', 2, 'MarkerSize', 4, 'Marker','.');
             hold on;
 
-            legendEntries{end+1} = sprintf('%s - %s', gender, conditions{j});
+            legendEntries{end+1} = sprintf('%s - %s', gender, validSubcondition);
         end
     end
 end
@@ -127,225 +147,86 @@ xlabel('Hour of the Day', 'FontSize', 20, 'FontWeight', 'bold');
 ylabel('Normalized Activity', 'FontSize', 20, 'FontWeight', 'bold');
 title('Normalized Activity Over 48 Hours by Gender', 'FontSize', 20, 'FontWeight', 'bold');
 legend(legendEntries, 'Location', 'BestOutside', 'FontSize', 20);
+grid on;
+set(gca, 'LineWidth', 1.5, 'FontSize', 14);
 hold off;
 
 disp('48-hour z-score normalized activity analysis and plots generated and saved.');
 
 %% Circadian Analysis AO
-% Pool data by gender and plot sums at each hour of the day
-
-% List of animal IDs and genders
-animalIDs = {'AO1', 'AO2', 'AO3', 'AO4', 'AO5', 'AO6', 'AO7', 'AO8'};
-genders = {'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female'};
-
-% Creating an 'Hour' column that represents just the hour part of 'Date'
+% Pool data by gender and plot means at each hour of the day
 combined_data.Hour = hour(combined_data.Date);
+hourlyMeanMale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Male'), :), 'Hour', 'mean', 'SelectedPixelDifference');
+hourlyMeanFemale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Female'), :), 'Hour', 'mean', 'SelectedPixelDifference');
 
-% Split data based on gender
-combined_data.Gender = cell(size(combined_data, 1), 1);
-for i = 1:length(animalIDs)
-    combined_data.Gender(strcmp(combined_data.Animal, animalIDs{i})) = genders(i);
-end
+hours48 = [hourlyMeanMale.Hour; hourlyMeanMale.Hour + 24];
+meansMale48 = [hourlyMeanMale.mean_SelectedPixelDifference; hourlyMeanMale.mean_SelectedPixelDifference];
+meansFemale48 = [hourlyMeanFemale.mean_SelectedPixelDifference; hourlyMeanFemale.mean_SelectedPixelDifference];
 
-% Summarize 'SelectedPixelDifference' by 'Hour' and 'Gender'
-hourlySumMale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Male'), :), 'Hour', 'sum', 'SelectedPixelDifference');
-hourlySumFemale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Female'), :), 'Hour', 'sum', 'SelectedPixelDifference');
-
-% Prepare data for 48-hour plot
-hours48 = [hourlySumMale.Hour; hourlySumMale.Hour + 24]; % Append hours 0-23 with 24-47
-sumsMale48 = [hourlySumMale.sum_SelectedPixelDifference; hourlySumMale.sum_SelectedPixelDifference]; % Repeat the sums
-sumsFemale48 = [hourlySumFemale.sum_SelectedPixelDifference; hourlySumFemale.sum_SelectedPixelDifference]; % Repeat the sums
-
-% Create the plot
 figure;
 hold on;
-b1 = bar(hours48, sumsMale48, 'FaceColor', 'b', 'BarWidth', 1, 'DisplayName', 'Male');
-b2 = bar(hours48, sumsFemale48, 'FaceColor', 'r', 'BarWidth', 0.5, 'DisplayName', 'Female');
+b1 = bar(hours48, meansMale48, 'FaceColor', 'b', 'BarWidth', 1, 'DisplayName', 'Male');
+b2 = bar(hours48, meansFemale48, 'FaceColor', 'r', 'BarWidth', 0.5, 'DisplayName', 'Female');
 addShadedAreaToPlotZT48Hour();
 
-% Ensure the bars are on top
 uistack(b1, 'top'); 
 uistack(b2, 'top'); 
 
-% Set plot title and labels
-title('Total Animal Circadian Sums Over 48 Hours by Gender', 'FontSize', 20, 'FontWeight', 'bold');
+title('Animal Circadian Means Over 48 Hours by Gender', 'FontSize', 20, 'FontWeight', 'bold');
 xlabel('Hour of the Day', 'FontSize', 18, 'FontWeight', 'bold');
-ylabel('Sum of Selected Pixel Difference', 'FontSize', 18, 'FontWeight', 'bold');
+ylabel('Mean of SelectedPixelDifference', 'FontSize', 18, 'FontWeight', 'bold');
 legend('Location', 'BestOutside');
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
 
 hold off;
-
-% Split data by gender and condition and find difference
-
-% Extract rows for the conditions and split by gender
-data_300lux_male = combined_data(strcmp(combined_data.Condition, '300Lux') & strcmp(combined_data.Gender, 'Male'), :);
-data_300lux_female = combined_data(strcmp(combined_data.Condition, '300Lux') & strcmp(combined_data.Gender, 'Female'), :);
-data_1000lux_male = combined_data(strcmp(combined_data.Condition, '1000Lux') & strcmp(combined_data.Gender, 'Male'), :);
-data_1000lux_female = combined_data(strcmp(combined_data.Condition, '1000Lux') & strcmp(combined_data.Gender, 'Female'), :);
-
-% Create 'Hour' column for each subset
-data_300lux_male.Hour = hour(data_300lux_male.Date);
-data_300lux_female.Hour = hour(data_300lux_female.Date);
-data_1000lux_male.Hour = hour(data_1000lux_male.Date);
-data_1000lux_female.Hour = hour(data_1000lux_female.Date);
-
-% Summarize 'NormalizedActivity' by 'Hour' for both gender subsets
-mean_300lux_male = groupsummary(data_300lux_male, 'Hour', 'mean', 'NormalizedActivity');
-mean_300lux_female = groupsummary(data_300lux_female, 'Hour', 'mean', 'NormalizedActivity');
-mean_1000lux_male = groupsummary(data_1000lux_male, 'Hour', 'mean', 'NormalizedActivity');
-mean_1000lux_female = groupsummary(data_1000lux_female, 'Hour', 'mean', 'NormalizedActivity');
-
-% Ensure both tables are sorted by 'Hour' for direct subtraction
-mean_300lux_male = sortrows(mean_300lux_male, 'Hour');
-mean_300lux_female = sortrows(mean_300lux_female, 'Hour');
-mean_1000lux_male = sortrows(mean_1000lux_male, 'Hour');
-mean_1000lux_female = sortrows(mean_1000lux_female, 'Hour');
-
-% Subtract means: 1000Lux - 300Lux
-difference_male = mean_1000lux_male.mean_NormalizedActivity - mean_300lux_male.mean_NormalizedActivity;
-difference_female = mean_1000lux_female.mean_NormalizedActivity - mean_300lux_female.mean_NormalizedActivity;
-
-% Prepare data for 24-hour plot
-hours = mean_300lux_male.Hour;
-
-% Create the plot
-figure;
-hold on;
-b3 = bar(hours, difference_male, 'b', 'BarWidth', 0.5, 'DisplayName', 'Male');
-b4 = bar(hours, difference_female, 'r', 'BarWidth', 1, 'DisplayName', 'Female');
-addShadedAreaToPlotZT24Hour();
-
-% Ensure the bars are on top
-uistack(b3, 'top'); 
-uistack(b4, 'top'); 
-
-% Set plot title and labels
-title('Difference in NormalizedActivity: 1000 Lux - 300 Lux by Gender', 'FontSize', 20, 'FontWeight', 'bold');
-xlabel('Hour of Day', 'FontSize', 18, 'FontWeight', 'bold');
-ylabel('Difference in NormalizedActivity', 'FontSize', 18, 'FontWeight', 'bold');
-legend('Location', 'BestOutside');
-set(gca, 'FontSize', 14, 'FontWeight', 'bold');
-
-hold off;
-
-% Line Plots for Differences by Gender
-
-data_300lux_male = combined_data(strcmp(combined_data.Condition, '300Lux') & strcmp(combined_data.Gender, 'Male'), :);
-data_1000lux_male = combined_data(strcmp(combined_data.Condition, '1000Lux') & strcmp(combined_data.Gender, 'Male'), :);
-data_300lux_female = combined_data(strcmp(combined_data.Condition, '300Lux') & strcmp(combined_data.Gender, 'Female'), :);
-data_1000lux_female = combined_data(strcmp(combined_data.Condition, '1000Lux') & strcmp(combined_data.Gender, 'Female'), :);
-
-% Create 'Hour' column for both subsets
-data_300lux_male.Hour = hour(data_300lux_male.Date);
-data_1000lux_male.Hour = hour(data_1000lux_male.Date);
-data_300lux_female.Hour = hour(data_300lux_female.Date);
-data_1000lux_female.Hour = hour(data_1000lux_female.Date);
-
-% Summarize 'SelectedPixelDifference' by 'Hour' for both subsets
-mean_300lux_male = groupsummary(data_300lux_male, 'Hour', 'mean', 'SelectedPixelDifference');
-mean_1000lux_male = groupsummary(data_1000lux_male, 'Hour', 'mean', 'SelectedPixelDifference');
-mean_300lux_female = groupsummary(data_300lux_female, 'Hour', 'mean', 'SelectedPixelDifference');
-mean_1000lux_female = groupsummary(data_1000lux_female, 'Hour', 'mean', 'SelectedPixelDifference');
-
-% Ensure both tables are sorted by 'Hour'
-mean_300lux_male = sortrows(mean_300lux_male, 'Hour');
-mean_1000lux_male = sortrows(mean_1000lux_male, 'Hour');
-mean_300lux_female = sortrows(mean_300lux_female, 'Hour');
-mean_1000lux_female = sortrows(mean_1000lux_female, 'Hour');
-
-% Calculate the difference: 1000Lux - 300Lux
-difference_male = mean_1000lux_male.mean_SelectedPixelDifference - mean_300lux_male.mean_SelectedPixelDifference;
-difference_female = mean_1000lux_female.mean_SelectedPixelDifference - mean_300lux_female.mean_SelectedPixelDifference;
-
-hours = mean_300lux_male.Hour;
-
-% Create the plot
-figure;
-hold on;
-
-% Plot mean activity for 300Lux by gender
-p1 = plot(hours, mean_300lux_male.mean_SelectedPixelDifference, '-o', 'DisplayName', '300 Lux Male', 'Color', 'b', 'LineWidth', 2);
-p2 = plot(hours, mean_300lux_female.mean_SelectedPixelDifference, '-o', 'DisplayName', '300 Lux Female', 'Color', 'r', 'LineWidth', 2);
-
-% Plot mean activity for 1000 Lux by gender
-p3 = plot(hours, mean_1000lux_male.mean_SelectedPixelDifference, '-s', 'DisplayName', '1000 Lux Male', 'Color', 'b', 'LineWidth', 2, 'LineStyle', '--');
-p4 = plot(hours, mean_1000lux_female.mean_SelectedPixelDifference, '-s', 'DisplayName', '1000 Lux Female', 'Color', 'r', 'LineWidth', 2, 'LineStyle', '--');
-
-% Plot the difference between the two conditions by gender
-p5 = plot(hours, difference_male, '-^', 'DisplayName', 'Difference Male', 'Color', 'g', 'LineWidth', 2);
-p6 = plot(hours, difference_female, '-^', 'DisplayName', 'Difference Female', 'Color', 'm', 'LineWidth', 2);
-
-addShadedAreaToPlotZT24Hour();
-
-% Ensure the lines are visible
-uistack(p1, 'top'); 
-uistack(p2, 'top'); 
-uistack(p3, 'top'); 
-uistack(p4, 'top'); 
-uistack(p5, 'top'); 
-uistack(p6, 'top'); 
-
-% Add plot settings
-title('Mean SelectedPixelDifference and Differences Over 24 Hours by Gender', 'FontSize', 20, 'FontWeight', 'bold');
-xlabel('Hour of Day', 'FontSize', 18, 'FontWeight', 'bold');
-ylabel('Mean SelectedPixelDifference', 'FontSize', 18, 'FontWeight', 'bold');
-legend('show', 'Location', 'northeast', 'FontSize', 14, 'FontWeight', 'bold');
-set(gca, 'FontSize', 14, 'FontWeight', 'bold');
-grid on;
-
-hold off;
-
-disp('Done');
 
 %% Functions
-% Function to add a shaded area to the current plot
+
 function addShadedAreaToPlotZT48Hour()
     hold on;
-    
-    % Define x and y coordinates for the first shaded area (from t=12 to t=24)
     x_shaded1 = [12, 24, 24, 12];
     y_lim = ylim;
     y_shaded1 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
-    
-    % Define x and y coordinates for the second shaded area (from t=36 to t=48)
     x_shaded2 = [36, 48, 48, 36];
     y_shaded2 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
-    
-    fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
-    
-    % Add shaded areas to the plot
+    fill_color = [0.7, 0.7, 0.7];
     fill(x_shaded1, y_shaded1, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     fill(x_shaded2, y_shaded2, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
-    
-    % Additional Plot settings
     xlabel('Hour of Day (ZT Time)');
     ylabel('Sum of PixelDifference');
     xlim([-0.5, 47.5]);
     xticks(0:1:47);
     xtickangle(90);
-    
     hold off;
 end
 
 function addShadedAreaToPlotZT24Hour()
     hold on;
-    % Define x and y coordinates for the shaded area (from t=12 to t=24)
     x_shaded = [12, 24, 24, 12];
     y_lim = ylim;
     y_shaded = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
-
-    fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
-
-    % Add shaded areas to the plot with 'HandleVisibility', 'off' to exclude from the legend
+    fill_color = [0.7, 0.7, 0.7];
     fill(x_shaded, y_shaded, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
-    
-    % Additional Plot settings
     xlabel('Hour of Day (ZT Time)');
     ylabel('Sum of PixelDifference');
     xlim([-0.5, 23.5]);
     xticks(0:23);
     xtickangle(0);
-    
     hold off;
+end
+
+%% Normalize and Summarize Data
+function aggregatedData = aggregate_daily_means(data, normalizedActivityColumn)
+    aggregatedData = varfun(@mean, data, 'InputVariables', normalizedActivityColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
+    meanColumnName = ['mean_' normalizedActivityColumn];
+    if ismember(meanColumnName, aggregatedData.Properties.VariableNames)
+        meanColumn = aggregatedData.(meanColumnName);
+    else
+        error('The column %s does not exist in aggregatedData.', meanColumnName);
+    end
+    stdError = varfun(@std, data, 'InputVariables', normalizedActivityColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
+    stdErrorValues = stdError{:, ['std_' normalizedActivityColumn]} ./ sqrt(aggregatedData.GroupCount);
+    aggregatedData = addvars(aggregatedData, meanColumn, 'NewVariableNames', 'Mean_NormalizedActivity');
+    aggregatedData = addvars(aggregatedData, stdErrorValues, 'NewVariableNames', 'StdError');
+    aggregatedData.GroupCount = []; % Remove the GroupCount variable
 end
