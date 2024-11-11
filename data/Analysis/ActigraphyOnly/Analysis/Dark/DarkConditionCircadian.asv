@@ -68,7 +68,7 @@ function plotAnimalData(data, titleText)
         xlabel('Hour of the Day', 'FontSize', 14, 'FontWeight', 'bold');
         ylabel('PixelSum', 'FontSize', 14, 'FontWeight', 'bold');
         set(gca, 'FontSize', 12, 'FontWeight', 'bold'); % Increase font size and bold for axis labels
-        sgtitle(titleText);
+        sgtitle("")
         % Ensure the bars are on top
         uistack(b1, 'top');
     end
