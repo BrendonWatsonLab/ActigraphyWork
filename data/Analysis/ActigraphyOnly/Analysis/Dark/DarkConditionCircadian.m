@@ -77,47 +77,38 @@ end
 function addShadedAreaToPlotZT48Hour()
     hold on;
     
-    % Define x and y coordinates for the first shaded area (from ZT 12 to ZT 24)
-    x_shaded1 = [12, 24, 24, 12];
+    % Define x and y coordinates for the first shaded area (from ZT 0 to ZT 12)
+    x_shaded1 = [0, 12, 12, 0];
     y_lim = ylim;
     y_shaded1 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
     
-    % Define x and y coordinates for the second shaded area (from ZT 36 to ZT 48)
-    x_shaded2 = [36, 48, 48, 36];
+    % Define x and y coordinates for the second shaded area (from ZT 12 to ZT 24)
+    x_shaded2 = [12, 24, 24, 12];
     y_shaded2 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
     
-    fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
+    % Define x and y coordinates for the third shaded area (from ZT 24 to ZT 36)
+    x_shaded3 = [24, 36, 36, 24];
+    y_shaded3 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
     
-    % Add shaded areas to the plot
-    fill(x_shaded1, y_shaded1, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
-    fill(x_shaded2, y_shaded2, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    % Define x and y coordinates for the fourth shaded area (from ZT 36 to ZT 48)
+    x_shaded4 = [36, 48, 48, 36];
+    y_shaded4 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
+    
+    % Define colors for shading
+    light_gray = [0.7, 0.7, 0.7];
+    dark_gray = [0.5, 0.5, 0.5];
+    
+    % Add shaded areas to the plot with light and dark gray
+    fill(x_shaded1, y_shaded1, light_gray, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    fill(x_shaded2, y_shaded2, dark_gray, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    fill(x_shaded3, y_shaded3, light_gray, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    fill(x_shaded4, y_shaded4, dark_gray, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     
     xlabel('Hour of Day (ZT Time)');
     ylabel('Sum of Selected Pixel Difference');
     xlim([-0.5, 47.5]);
     xticks(0:1:47);
     xtickangle(90);
-    
-    hold off;
-end
-
-function addShadedAreaToPlotZT24Hour()
-    hold on;
-    % Define x and y coordinates for the shaded area (from ZT 12 to ZT 24)
-    x_shaded = [12, 24, 24, 12];
-    y_lim = ylim;
-    y_shaded = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
-
-    fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
-
-    % Add shaded areas to the plot with 'HandleVisibility', 'off' to exclude from the legend
-    fill(x_shaded, y_shaded, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
-    
-    xlabel('Hour of Day (ZT Time)');
-    ylabel('Sum of Selected Pixel Difference');
-    xlim([-0.5, 23.5]);
-    xticks(0:23);
-    xtickangle(0);
     
     hold off;
 end

@@ -11,133 +11,120 @@ combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah 
 disp('Column names in the data:');
 disp(combinedData.Properties.VariableNames);
 
-% The correct column name for NormalizedActivity (replace 'NormalizedActivi…' with the correct full name)
+% The correct column name for NormalizedActivity
 normalizedActivityColumn = 'NormalizedActivity';
 
-% Filter out AO1-4 from the data for 'FullDark' and '300LuxEnd'
-combinedData_AO5_8 = combinedData(~(ismember(combinedData.Animal, {'AO1', 'AO2', 'AO3', 'AO4'}) & ismember(combinedData.Condition, {'FullDark', '300LuxEnd'})), :);
+% Define male and female animals
+maleAnimals = {'AO1', 'AO2', 'AO3', 'AO7'};
+femaleAnimals = {'AO4', 'AO5', 'AO6', 'AO8'};
 
-% Aggregate the data to daily means
-dailyData_AO5_8 = aggregate_daily_means(combinedData_AO5_8, normalizedActivityColumn);
+% Separate the data into males and females
+maleData = combinedData(ismember(combinedData.Animal, maleAnimals), :);
+femaleData = combinedData(ismember(combinedData.Animal, femaleAnimals), :);
 
-% Extract data for each condition
-data300Lux = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, '300Lux'), :);
-data1000Lux = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, '1000Lux'), :);
-dataFullDark = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, 'FullDark'), :);
-data300LuxEnd = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, '300LuxEnd'), :);
+% Function to process each group (males/females)
+function process_group(groupData, groupName, normalizedActivityColumn)
+    % Filter out AO1-4 from the data for 'FullDark' and '300LuxEnd'
+    groupData_AO5_8 = groupData(~(ismember(groupData.Animal, {'AO1', 'AO2', 'AO3', 'AO4'}) & ...
+                                  ismember(groupData.Condition, {'FullDark', '300LuxEnd'})), :);
+    
+    % Print the size of the filtered dataset
+    fprintf('%s data size after filtering: %d rows\n', groupName, height(groupData_AO5_8));
+    
+    % Aggregate the data to daily means
+    dailyData_AO5_8 = aggregate_daily_means(groupData_AO5_8, normalizedActivityColumn);
 
-%% Plotting: 300Lux vs 1000Lux
-conditions1 = {'300Lux', '1000Lux'};
-means1 = [mean(data300Lux.Mean_NormalizedActivity), mean(data1000Lux.Mean_NormalizedActivity)];
-stderr1 = [mean(data300Lux.StdError), mean(data1000Lux.StdError)];
+    % Print unique conditions to verify
+    disp(['Unique conditions in ', groupName, ' dataset:']);
+    disp(unique(dailyData_AO5_8.Condition));
 
-% Perform t-test between 300Lux and 1000Lux
-[h1, p1] = ttest2(data300Lux.Mean_NormalizedActivity, data1000Lux.Mean_NormalizedActivity);
-fprintf('p-value for 300Lux vs 1000Lux: %f\n', p1);
+    % Extract data for each condition
+    data300Lux = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, '300Lux'), :);
+    data1000Lux = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, '1000Lux'), :);
+    dataFullDark = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, 'FullDark'), :);
+    data300LuxEnd = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, '300LuxEnd'), :);
 
-% Create bar plot
-figure;
-bar(means1);
-hold on;
-errorbar(1:length(conditions1), means1, stderr1, 'k', 'LineStyle', 'none');
-set(gca, 'XTickLabel', conditions1, 'FontSize', 14, 'FontWeight', 'bold');
-ylabel('Normalized Activity (z-score)', 'FontSize', 18, 'FontWeight', 'bold');
-title('Comparison of Activity: 300Lux vs 1000Lux', 'FontSize', 20, 'FontWeight', 'bold');
+    %% Statistical Analysis: ANOVA and post hoc Tukey's HSD
+    % Prepare data for ANOVA
+    anovaData = [data300Lux; data1000Lux; dataFullDark; data300LuxEnd];
+    p = anovan(anovaData.Mean_NormalizedActivity, {anovaData.Condition}, 'model', 'full', 'varnames', {'Condition'});
 
-% Determine y-limits and place significance markers
-max_y1 = max(means1 + stderr1);
-min_y1 = min(means1 - stderr1);
-line_y1 = max_y1 + 0.05 * abs(max_y1 - min_y1);
-line_y1_neg = min_y1 - 0.05 * abs(max_y1 - min_y1);
+    % Conduct Tukey's HSD post hoc test
+    [~, ~, stats] = anova1(anovaData.Mean_NormalizedActivity, anovaData.Condition, 'off');
+    comp = multcompare(stats, 'CType', 'tukey-kramer', 'Display', 'off');
 
-if p1 < 0.05
-    if max_y1 > 0
-        plot([1, 2], [line_y1, line_y1], '-k', 'LineWidth', 1.5);
-        text(1.5, line_y1 + 0.02 * abs(max_y1 - min_y1), '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
-    else
-        plot([1, 2], [line_y1_neg, line_y1_neg], '-k', 'LineWidth', 1.5);
-        text(1.5, line_y1_neg + 0.02 * abs(max_y1 - min_y1), '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
+    % Extract pairwise comparisons and p-values
+    pairwise_comparisons = comp(:, 1:2);
+    p_values = comp(:, 6);
+    
+    %% Plotting: 300Lux vs 1000Lux
+    conditions1 = {'300Lux', '1000Lux'};
+    means1 = [mean(data300Lux.Mean_NormalizedActivity), mean(data1000Lux.Mean_NormalizedActivity)];
+    stderr1 = [mean(data300Lux.StdError), mean(data1000Lux.StdError)];
+
+    % Create bar plot
+    figure;
+    bar(means1);
+    hold on;
+    errorbar(1:length(conditions1), means1, stderr1, 'k', 'LineStyle', 'none');
+    
+    % Add significance stars if any p-values are significant for this comparison
+    indices = find((pairwise_comparisons(:, 1) == 1 & pairwise_comparisons(:, 2) == 2) | (pairwise_comparisons(:, 1) == 2 & pairwise_comparisons(:, 2) == 1));
+    if any(p_values(indices) < 0.05)
+        sigstar({[1, 2]}, p_values(indices));
     end
-end
-ylim([min_y1 - 0.3 * abs(max_y1 - min_y1), max_y1 + 0.3 * abs(max_y1 - min_y1)]);
-hold off;
 
-%% Plotting: 300Lux vs FullDark vs 300LuxEnd
-conditions2 = {'300Lux', 'FullDark', '300LuxEnd'};
-means2 = [mean(data300Lux.Mean_NormalizedActivity), mean(dataFullDark.Mean_NormalizedActivity), mean(data300LuxEnd.Mean_NormalizedActivity)];
-stderr2 = [mean(data300Lux.StdError), mean(dataFullDark.StdError), mean(data300LuxEnd.StdError)];
+    set(gca, 'XTickLabel', conditions1, 'XTick', 1:length(conditions1), 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('Normalized Activity (z-score)', 'FontSize', 18, 'FontWeight', 'bold');
+    title(sprintf('Comparison of Activity: 300Lux vs 1000Lux (%s)', groupName), 'FontSize', 20, 'FontWeight', 'bold');
+    hold off;
 
-% Perform t-tests between conditions
-[h2, p2] = ttest2(data300Lux.Mean_NormalizedActivity, dataFullDark.Mean_NormalizedActivity);
-[h3, p3] = ttest2(data300Lux.Mean_NormalizedActivity, data300LuxEnd.Mean_NormalizedActivity);
-[h6, p6] = ttest2(dataFullDark.Mean_NormalizedActivity, data300LuxEnd.Mean_NormalizedActivity);
+    %% Plotting: 300Lux vs FullDark vs 300LuxEnd
+    conditions2 = {'300Lux', 'FullDark', '300LuxEnd'};
+    means2 = [mean(data300Lux.Mean_NormalizedActivity), mean(dataFullDark.Mean_NormalizedActivity), mean(data300LuxEnd.Mean_NormalizedActivity)];
+    stderr2 = [mean(data300Lux.StdError), mean(dataFullDark.StdError), mean(data300LuxEnd.StdError)];
 
-fprintf('p-value for 300Lux vs FullDark: %f\n', p2);
-fprintf('p-value for 300Lux vs 300LuxEnd: %f\n', p3);
-fprintf('p-value for FullDark vs 300LuxEnd: %f\n', p6);
-
-% Create bar plot
-figure;
-bar(means2);
-hold on;
-errorbar(1:length(conditions2), means2, stderr2, 'k', 'LineStyle', 'none');
-set(gca, 'XTickLabel', conditions2, 'FontSize', 14, 'FontWeight', 'bold');
-ylabel('Normalized Activity (z-score)', 'FontSize', 18, 'FontWeight', 'bold');
-title('Comparison of Activity: 300Lux vs FullDark vs 300LuxEnd', 'FontSize', 20, 'FontWeight', 'bold');
-
-% Determine y-limits and place significance markers
-max_y2 = max(means2 + stderr2);
-min_y2 = min(means2 - stderr2);
-line_y2 = max_y2 + 0.05 * abs(max_y2 - min_y2);
-line_y2_neg = min_y2 - 0.05 * abs(max_y2 - min_y2);
-increment_y = max_y2 * 0.05;
-increment_y_neg = min_y2 * 0.05;
-
-if p2 < 0.05
-    if max_y2 > 0
-        plot([1, 2], [line_y2, line_y2], '-k', 'LineWidth', 1.5);
-        text(1.5, line_y2 + increment_y, '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
-        line_y2 = line_y2 + 1.2 * increment_y;
-    else
-        plot([1, 2], [line_y2_neg, line_y2_neg], '-k', 'LineWidth', 1.5);
-        text(1.5, line_y2_neg + increment_y_neg, '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
-        line_y2_neg = line_y2_neg + 1.2 * increment_y_neg;
+    % Create bar plot
+    figure;
+    bar(means2);
+    hold on;
+    errorbar(1:length(conditions2), means2, stderr2, 'k', 'LineStyle', 'none');
+    
+    % Add significance stars for any significant pairwise comparisons for these conditions
+    pairs = {[1, 2], [2, 3], [1, 3]};
+    for i = 1:length(pairs)
+        indices = find((pairwise_comparisons(:, 1) == pairs{i}(1) & pairwise_comparisons(:, 2) == pairs{i}(2)) | ...
+                       (pairwise_comparisons(:, 1) == pairs{i}(2) & pairwise_comparisons(:, 2) == pairs{i}(1)));
+        if any(p_values(indices) < 0.05)
+            sigstar(pairs(i), p_values(indices));
+        end
     end
-end
-if p3 < 0.05
-    if max_y2 > 0
-        plot([1, 3], [line_y2, line_y2], '-k', 'LineWidth', 1.5);
-        text(2, line_y2 + increment_y, '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
-        line_y2 = line_y2 + 1.2 * increment_y;
-    else
-        plot([1, 3], [line_y2_neg, line_y2_neg], '-k', 'LineWidth', 1.5);
-        text(2, line_y2_neg + increment_y_neg, '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
-        line_y2_neg = line_y2_neg + 1.2 * increment_y_neg;
-    end
-end
-if p6 < 0.05
-    if max_y2 > 0
-        plot([2, 3], [line_y2, line_y2], '-k', 'LineWidth', 1.5);
-        text(2.5, line_y2 + increment_y, '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
-        line_y2 = line_y2 + 1.2 * increment_y;
-    else
-        plot([2, 3], [line_y2_neg, line_y2_neg], '-k', 'LineWidth', 1.5);
-        text(2.5, line_y2_neg + increment_y_neg, '*', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
-        line_y2_neg = line_y2_neg + 1.2 * increment_y_neg;
-    end   
+    
+    set(gca, 'XTickLabel', conditions2, 'XTick', 1:length(conditions2), 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('Normalized Activity (z-score)', 'FontSize', 18, 'FontWeight', 'bold');
+    title(sprintf('Comparison of Activity: 300Lux vs FullDark vs 300LuxEnd (%s)', groupName), 'FontSize', 20, 'FontWeight', 'bold');
+    hold off;
 end
 
-ylim([min_y2 - 0.3 * abs(max_y2 - min_y2), max_y2 + 0.3 * abs(max_y2 - min_y2)]);
-hold off;
+% Process data for males and females
+process_group(maleData, 'Males', normalizedActivityColumn);
+process_group(femaleData, 'Females', normalizedActivityColumn);
 
-% Save the figures if necessary (uncomment and adjust paths):
-% saveas(gcf, fullfile(saveDir, 'Activity_Comparison_300Lux_vs_1000Lux.png'));
-% saveas(gcf, fullfile(saveDir, 'Activity_Comparison_300Lux_vs_FullDark_vs_300LuxEnd.png'));
-
-disp('Bar plots with statistical significance markers generated and saved.');
+disp('Bar plots generated.');
 
 %% Function Definition
 function aggregatedData = aggregate_daily_means(data, normalizedActivityColumn)
+    % Print the size of the original dataset
+    fprintf('Original data size: %d rows\n', height(data));
+
+    % Floor the RelativeDay values to aggregate by integer days
+    data.RelativeDay = floor(data.RelativeDay);
+
+    % Print the unique RelativeDay values to ensure flooring worked
+    disp('Unique RelativeDay values after flooring:');
+    disp(unique(data.RelativeDay));
+
+    % Aggregate the data to daily means
     aggregatedData = varfun(@mean, data, 'InputVariables', normalizedActivityColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
     
     % Verify column names before using them:
@@ -147,11 +134,15 @@ function aggregatedData = aggregate_daily_means(data, normalizedActivityColumn)
     else
         error('The column %s does not exist in aggregatedData.', meanColumnName);
     end
-    
+
     stdError = varfun(@std, data, 'InputVariables', normalizedActivityColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
     stdErrorValues = stdError{:, ['std_' normalizedActivityColumn]} ./ sqrt(aggregatedData.GroupCount);
+
+    % Create a new table with desired variables only
+    aggregatedData = aggregatedData(:, {'Condition', 'Animal', 'RelativeDay'}); % Retain only relevant columns
+    aggregatedData.Mean_NormalizedActivity = meanColumn;  % Add mean column
+    aggregatedData.StdError = stdErrorValues;  % Add standard error column
     
-    aggregatedData = addvars(aggregatedData, meanColumn, 'NewVariableNames', 'Mean_NormalizedActivity');
-    aggregatedData = addvars(aggregatedData, stdErrorValues, 'NewVariableNames', 'StdError');
-    aggregatedData.GroupCount = []; % Remove the GroupCount variable
+    % Print the size of the aggregated dataset
+    fprintf('Aggregated data size: %d rows\n', height(aggregatedData));
 end

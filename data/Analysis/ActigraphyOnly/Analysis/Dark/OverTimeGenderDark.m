@@ -67,10 +67,13 @@ function plot_data(groupName, analyzedTable, conditions, colors, max_day_per_con
     plot_offset = 0;
     label_positions = [];
     legend_handles = [];
+    x_tick_labels = [];
+    x_tick_positions = []; % To store positions for the x-tick labels
     
     for c = 1:length(conditions)
         condition = conditions{c};
         color = colors{c};
+        max_day = max_day_per_condition(c);
         
         conditionData = analyzedTable(strcmp(analyzedTable.Condition, condition), :);
         x_values = plot_offset + (1:height(conditionData))'; % X-values for plotting
@@ -89,12 +92,18 @@ function plot_data(groupName, analyzedTable, conditions, colors, max_day_per_con
              [meanActivity - stdError; flipud(meanActivity + stdError)], ...
              color, 'FaceAlpha', 0.2, 'EdgeColor', 'none');
         
-        plot_offset = plot_offset + height(conditionData);
+        % Add day labels for the x-axis
+        x_tick_labels = [x_tick_labels, 1:max_day]; % Generate labels starting from 1 to max_day
+        x_tick_positions = [x_tick_positions, plot_offset + (1:max_day)]; % Store their positions
+        
+        % Move the plot offset after the current condition
+        plot_offset = plot_offset + max_day;        
         label_positions = [label_positions, plot_offset];
     end
     
-    set(gca, 'XTick', 1:plot_offset);
-    set(gca, 'XTickLabel', 1:plot_offset);
+    % Customize the x-axis labels to show days 1 to max_day per condition
+    set(gca, 'XTick', x_tick_positions);
+    set(gca, 'XTickLabel', x_tick_labels);
     
     for i = 1:length(label_positions)
         xline(label_positions(i), '--k', 'LineWidth', 1.5);
@@ -113,4 +122,3 @@ colors = {'b', 'r', 'k', 'g'};
 % Plotting data
 plot_data('Males', maleAnalyzedTable, conditions, colors, max_day_per_condition);
 plot_data('Females', femaleAnalyzedTable, conditions, colors, max_day_per_condition);
-
