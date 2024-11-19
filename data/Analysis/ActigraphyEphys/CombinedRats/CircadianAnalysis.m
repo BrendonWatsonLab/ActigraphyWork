@@ -3,12 +3,18 @@
 %% Reading in data
 % reading in data, already in ZT form 
 convertZT = false;
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/ZT/CombinedRelDaysBinned.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohortData.csv');
+
+% List of conditions for analysis
+conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
+
 %% Wrangling hourly bins and plotting bar graphs
 % plots bars of ZT 0-10 and 15-24 as well as 10-14 vs rest
 
+% Example analysis call (assuming AnalyzeCircadianRunning function is updated for the new conditions)
 AnalyzeCircadianRunning(combined_data, false, 'All Rats');
-%% plots bars of sums at each hour of the day 
+
+%% plots bars of sums at each hour of the day
 % Creating an 'Hour' column that represents just the hour part of 'Date'
 combined_data.Hour = hour(combined_data.Date);
 
@@ -29,10 +35,10 @@ ylabel('Sum of Selected Pixel Difference', 'FontSize', 18, 'FontWeight', 'bold')
 set(gca, 'FontSize', 14, 'FontWeight', 'bold'); % Increase font size and bold for axis labels
 
 % Ensure the bars are on top
-uistack(b1, 'top'); 
+uistack(b1, 'top');
 
 %% Finding what hour of the day accounts for the difference
-% Extract rows for the 300Lux and 1000Lux4 conditions
+% Extract rows for the conditions
 data_300lux = combined_data(strcmp(combined_data.Condition, '300Lux'), :);
 data_1000lux_week4 = combined_data(strcmp(combined_data.Condition, '1000Lux4'), :);
 
@@ -73,7 +79,7 @@ uistack(b1, 'top');
 grid on;
 
 %% Line Plots for Differences
-% Extract rows for the 300Lux and 1000Lux4 conditions
+% Extract rows for the conditions
 data_300lux = combined_data(strcmp(combined_data.Condition, '300Lux'), :);
 data_1000lux_week4 = combined_data(strcmp(combined_data.Condition, '1000Lux4'), :);
 
@@ -149,7 +155,7 @@ function addShadedAreaToPlotZT48Hour()
     xlabel('Hour of Day (ZT Time)');
     ylabel('Sum of PixelDifference');
     xlim([-0.5, 47.5]);
-    xticks(0:1:47);
+    xticks(0:47);
     xtickangle(90);
     
     hold off;
