@@ -1,3 +1,4 @@
+%%%%% Auxiliary function to explore the .mat file
 function exploreMatFile(filename)
     % Load the .mat file
     data = load(filename);
@@ -34,4 +35,3 @@ function exploreStruct(s, level)
         end
     end
 end
-
