@@ -96,7 +96,7 @@ function sleepSummaryTable = analyzeSleepStates(filename, lightingLux, animalSex
     variableNames = {'binnedPosixTime', 'ZTtime', 'binnedSleepStates', 'lightingCondition', 'lights', 'animalSexColumn'};
 
     for i = 1:numel(variables)
-        if iscolumn(variables{i}) == 0
+        if ~iscolumn(variables{i})
             variables{i} = variables{i}(:); % Ensure each variable is a column vector
         end
         disp(['Length of ' variableNames{i} ': ' num2str(length(variables{i}))]);
