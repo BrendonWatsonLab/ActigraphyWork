@@ -2,10 +2,11 @@
 % aggregating data into daily means to avoid skewing caused by the large dataset,
 % providing more meaningful statistics.
 
+%% starting
 fprintf('Combining and Normalizing Data\n');
 
 % Read the data from the CSV file
-combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8Dark_binned_data.csv');
+combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
 
 % Display the column names to verify
 disp('Column names in the data:');
@@ -22,7 +23,7 @@ femaleAnimals = {'AO4', 'AO5', 'AO6', 'AO8'};
 maleData = combinedData(ismember(combinedData.Animal, maleAnimals), :);
 femaleData = combinedData(ismember(combinedData.Animal, femaleAnimals), :);
 
-% Function to process each group (males/females)
+%% Function to process each group (males/females)
 function process_group(groupData, groupName, normalizedActivityColumn)
     % Filter out AO1-4 from the data for 'FullDark' and '300LuxEnd'
     groupData_AO5_8 = groupData(~(ismember(groupData.Animal, {'AO1', 'AO2', 'AO3', 'AO4'}) & ...
@@ -33,86 +34,57 @@ function process_group(groupData, groupName, normalizedActivityColumn)
     
     % Aggregate the data to daily means
     dailyData_AO5_8 = aggregate_daily_means(groupData_AO5_8, normalizedActivityColumn);
-
+    
     % Print unique conditions to verify
     disp(['Unique conditions in ', groupName, ' dataset:']);
     disp(unique(dailyData_AO5_8.Condition));
-
+    
+    % Calculate weekly averages
+    weeklyData_AO5_8 = aggregate_weekly_means(dailyData_AO5_8);
+    
     % Extract data for each condition
-    data300Lux = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, '300Lux'), :);
-    data1000Lux = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, '1000Lux'), :);
-    dataFullDark = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, 'FullDark'), :);
-    data300LuxEnd = dailyData_AO5_8(strcmp(dailyData_AO5_8.Condition, '300LuxEnd'), :);
+    data300Lux = weeklyData_AO5_8(strcmp(weeklyData_AO5_8.Condition, '300Lux'), :);
+    data1000Lux = weeklyData_AO5_8(strcmp(weeklyData_AO5_8.Condition, '1000Lux'), :);
+    dataFullDark = weeklyData_AO5_8(strcmp(weeklyData_AO5_8.Condition, 'FullDark'), :);
+    data300LuxEnd = weeklyData_AO5_8(strcmp(weeklyData_AO5_8.Condition, '300LuxEnd'), :);
 
-    %% Statistical Analysis: ANOVA and post hoc Tukey's HSD
-    % Prepare data for ANOVA
-    anovaData = [data300Lux; data1000Lux; dataFullDark; data300LuxEnd];
-    p = anovan(anovaData.Mean_NormalizedActivity, {anovaData.Condition}, 'model', 'full', 'varnames', {'Condition'});
-
-    % Conduct Tukey's HSD post hoc test
-    [~, ~, stats] = anova1(anovaData.Mean_NormalizedActivity, anovaData.Condition, 'off');
-    comp = multcompare(stats, 'CType', 'tukey-kramer', 'Display', 'off');
-
-    % Extract pairwise comparisons and p-values
-    pairwise_comparisons = comp(:, 1:2);
-    p_values = comp(:, 6);
-    
-    %% Plotting: 300Lux vs 1000Lux
-    conditions1 = {'300Lux', '1000Lux'};
-    means1 = [mean(data300Lux.Mean_NormalizedActivity), mean(data1000Lux.Mean_NormalizedActivity)];
-    stderr1 = [mean(data300Lux.StdError), mean(data1000Lux.StdError)];
+    %% Plotting: Weekly Averages for Each Condition
+    conditions = {'300Lux', '1000Lux', 'FullDark', '300LuxEnd'};
+    data = {data300Lux, data1000Lux, dataFullDark, data300LuxEnd};
+    numWeeks = 4; % Assuming 4 weeks per condition
 
     % Create bar plot
     figure;
-    bar(means1);
     hold on;
-    errorbar(1:length(conditions1), means1, stderr1, 'k', 'LineStyle', 'none');
-    
-    % Add significance stars if any p-values are significant for this comparison
-    indices = find((pairwise_comparisons(:, 1) == 1 & pairwise_comparisons(:, 2) == 2) | (pairwise_comparisons(:, 1) == 2 & pairwise_comparisons(:, 2) == 1));
-    if any(p_values(indices) < 0.05)
-        sigstar({[1, 2]}, p_values(indices));
-    end
 
-    set(gca, 'XTickLabel', conditions1, 'XTick', 1:length(conditions1), 'FontSize', 14, 'FontWeight', 'bold');
-    ylabel('Normalized Activity (z-score)', 'FontSize', 18, 'FontWeight', 'bold');
-    title(sprintf('Comparison of Activity: 300Lux vs 1000Lux (%s)', groupName), 'FontSize', 20, 'FontWeight', 'bold');
-    hold off;
-
-    %% Plotting: 300Lux vs FullDark vs 300LuxEnd
-    conditions2 = {'300Lux', 'FullDark', '300LuxEnd'};
-    means2 = [mean(data300Lux.Mean_NormalizedActivity), mean(dataFullDark.Mean_NormalizedActivity), mean(data300LuxEnd.Mean_NormalizedActivity)];
-    stderr2 = [mean(data300Lux.StdError), mean(dataFullDark.StdError), mean(data300LuxEnd.StdError)];
-
-    % Create bar plot
-    figure;
-    bar(means2);
-    hold on;
-    errorbar(1:length(conditions2), means2, stderr2, 'k', 'LineStyle', 'none');
-    
-    % Add significance stars for any significant pairwise comparisons for these conditions
-    pairs = {[1, 2], [2, 3], [1, 3]};
-    for i = 1:length(pairs)
-        indices = find((pairwise_comparisons(:, 1) == pairs{i}(1) & pairwise_comparisons(:, 2) == pairs{i}(2)) | ...
-                       (pairwise_comparisons(:, 1) == pairs{i}(2) & pairwise_comparisons(:, 2) == pairs{i}(1)));
-        if any(p_values(indices) < 0.05)
-            sigstar(pairs(i), p_values(indices));
+    for i = 1:numel(conditions)
+        % Calculate means and standard errors for each week
+        means = arrayfun(@(w) mean(data{i}.Mean_NormalizedActivity(data{i}.Week == w)), 1:numWeeks);
+        stderrs = arrayfun(@(w) mean(data{i}.StdError(data{i}.Week == w)), 1:numWeeks);
+        
+        % Plot bars for each week
+        for w = 1:numWeeks
+            bar((i-1)*numWeeks + w, means(w));
+            errorbar((i-1)*numWeeks + w, means(w), stderrs(w), 'k', 'LineStyle', 'none');
         end
     end
-    
-    set(gca, 'XTickLabel', conditions2, 'XTick', 1:length(conditions2), 'FontSize', 14, 'FontWeight', 'bold');
+
+    % Add significance stars if needed
+    % Note: You need an updated statistical analysis for weekly comparisons here
+
+    set(gca, 'XTickLabel', repelem(conditions, numWeeks), 'XTick', 1:numWeeks*numel(conditions), 'FontSize', 14, 'FontWeight', 'bold');
     ylabel('Normalized Activity (z-score)', 'FontSize', 18, 'FontWeight', 'bold');
-    title(sprintf('Comparison of Activity: 300Lux vs FullDark vs 300LuxEnd (%s)', groupName), 'FontSize', 20, 'FontWeight', 'bold');
+    title(sprintf('Weekly Average Comparison of Activity (%s)', groupName), 'FontSize', 20, 'FontWeight', 'bold');
     hold off;
 end
 
-% Process data for males and females
+%% Process data for males and females
 process_group(maleData, 'Males', normalizedActivityColumn);
 process_group(femaleData, 'Females', normalizedActivityColumn);
 
 disp('Bar plots generated.');
 
-%% Function Definition
+%% Function Definitions
 function aggregatedData = aggregate_daily_means(data, normalizedActivityColumn)
     % Print the size of the original dataset
     fprintf('Original data size: %d rows\n', height(data));
@@ -145,4 +117,29 @@ function aggregatedData = aggregate_daily_means(data, normalizedActivityColumn)
     
     % Print the size of the aggregated dataset
     fprintf('Aggregated data size: %d rows\n', height(aggregatedData));
+end
+
+function aggregatedData = aggregate_weekly_means(dailyData)
+    % Add a new column for Weeks
+    dailyData.Week = ceil(dailyData.RelativeDay / 7);
+    
+    % Print the size of the original dataset
+    fprintf('Original data size for weekly aggregation: %d rows\n', height(dailyData));
+
+    % Aggregate the data to weekly means
+    weeklyMeanData = varfun(@mean, dailyData, 'InputVariables', 'Mean_NormalizedActivity', 'GroupingVariables', {'Condition', 'Animal', 'Week'});
+    weeklyStdData = varfun(@std, dailyData, 'InputVariables', 'Mean_NormalizedActivity', 'GroupingVariables', {'Condition', 'Animal', 'Week'});
+    
+    % Calculate standard error
+    weeklyStdData.Properties.VariableNames{'std_Mean_NormalizedActivity'} = 'StdDev';
+    weeklyMeanData.StdError = weeklyStdData.StdDev ./ sqrt(weeklyMeanData.GroupCount);
+    
+    % Rename the columns to reflect mean values
+    weeklyMeanData.Properties.VariableNames{'mean_Mean_NormalizedActivity'} = 'Mean_NormalizedActivity';
+
+    % Print the size of the aggregated dataset
+    fprintf('Aggregated weekly data size: %d rows\n', height(weeklyMeanData));
+    
+    % Return the aggregated data
+    aggregatedData = weeklyMeanData;
 end
