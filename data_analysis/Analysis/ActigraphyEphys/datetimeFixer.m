@@ -1,5 +1,5 @@
 % Load the CSV data into a table
-filename = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohortData.csv'; % Replace this with your actual file name
+filename = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohort_Data.csv';
 data = readtable(filename);
 
 % Display the first few rows of the 'Date' column for debugging
@@ -23,6 +23,10 @@ if any(strcmp(data.Properties.VariableNames, 'Date'))
                 % Replace '0024' with '2024'
                 fixedYearStr = [dateStr(1:6), '2024', dateStr(11:end)];
                 fixedDates(i) = fixedYearStr;
+            elseif strcmp(dateStr(7:10), '0022')
+                % Replace '0022' with '2022'
+                fixedYearStr = [dateStr(1:6), '2022', dateStr(11:end)];
+                fixedDates(i) = fixedYearStr;
             else
                 fixedDates(i) = dateStr; % Keep the original date if no change is needed
             end
@@ -39,7 +43,7 @@ if any(strcmp(data.Properties.VariableNames, 'Date'))
     disp(data.Date(1:10));  % Display the first 10 entries as a sample
 
     % Save the corrected table back to a new CSV file
-    newFilename = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohort_Data.csv'; % Specify a new filename
+    newFilename = '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohortData.csv'; % Specify a new filename
     writetable(data, newFilename);
     disp(['Corrected file saved as ', newFilename]);
 else

@@ -191,6 +191,11 @@ function addShadedAreaToPlotZT48Hour()
     % Add shaded areas to the plot
     fill(x_shaded1, y_shaded1, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     fill(x_shaded2, y_shaded2, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+
+    % Additional Plot settings
+    xlim([-0.5, 47.5]);
+    xticks(0:1:47);
+    xtickangle(90);
     
     hold off;
 end
