@@ -1,5 +1,9 @@
 % Analysis for AO1-8, including dark conditions. Separated by male and
-% female. The stats are done by aggregating into daily means to ensure that
+% female. 
+%
+% Average of SelectedPixelDifference
+% 
+% The stats are done by aggregating into daily means to ensure that
 % the large amount of data points isn't skewing the data. Will output a
 % line plot over time per day. 
 
@@ -7,7 +11,7 @@
 fprintf('Reading in table\n');
 
 % Read in data from .csv
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8Dark_binned_data.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
 
 % Determine maximum number of days for each condition
 conditions = {'300Lux', '1000Lux', 'FullDark', '300LuxEnd'};
@@ -44,9 +48,9 @@ function analyzedData = aggregate_data_by_day(data, conditions, max_days)
             end
             
             % Calculate daily mean and standard error
-            meanNormalizedActivity = mean(dailyData.NormalizedActivity);
-            stdError = std(dailyData.NormalizedActivity) / sqrt(height(dailyData));
-            analyzedData = [analyzedData; {condition, day, meanNormalizedActivity, stdError}];
+            meanSelectedPixelDifference = mean(dailyData.SelectedPixelDifference);
+            stdError = std(dailyData.SelectedPixelDifference) / sqrt(height(dailyData));
+            analyzedData = [analyzedData; {condition, day, meanSelectedPixelDifference, stdError}];
         end
     end
 end
@@ -56,8 +60,8 @@ maleAnalyzedData = aggregate_data_by_day(maleData, conditions, max_day_per_condi
 femaleAnalyzedData = aggregate_data_by_day(femaleData, conditions, max_day_per_condition);
 
 % Convert to tables for easier manipulation
-maleAnalyzedTable = cell2table(maleAnalyzedData, 'VariableNames', {'Condition', 'Day', 'MeanNormalizedActivity', 'StdError'});
-femaleAnalyzedTable = cell2table(femaleAnalyzedData, 'VariableNames', {'Condition', 'Day', 'MeanNormalizedActivity', 'StdError'});
+maleAnalyzedTable = cell2table(maleAnalyzedData, 'VariableNames', {'Condition', 'Day', 'MeanSelectedPixelDifference', 'StdError'});
+femaleAnalyzedTable = cell2table(femaleAnalyzedData, 'VariableNames', {'Condition', 'Day', 'MeanSelectedPixelDifference', 'StdError'});
 
 % Plotting Function
 function plot_data(groupName, analyzedTable, conditions, colors, max_day_per_condition)
@@ -79,7 +83,7 @@ function plot_data(groupName, analyzedTable, conditions, colors, max_day_per_con
         x_values = plot_offset + (1:height(conditionData))'; % X-values for plotting
         
         % Calculate mean, std, stderr
-        meanActivity = conditionData.MeanNormalizedActivity;
+        meanActivity = conditionData.MeanSelectedPixelDifference;
         stdError = conditionData.StdError;
         
         % Plot with error bars
@@ -109,7 +113,7 @@ function plot_data(groupName, analyzedTable, conditions, colors, max_day_per_con
         xline(label_positions(i), '--k', 'LineWidth', 1.5);
     end
     
-    ylabel('Mean Normalized Activity');
+    ylabel('Mean Selected Pixel Difference');
     title(sprintf('Activity Under Different Lighting Conditions - %s', groupName));
     xlim([0, plot_offset + 1]);
     legend(legend_handles, conditions, 'Location', 'Best');

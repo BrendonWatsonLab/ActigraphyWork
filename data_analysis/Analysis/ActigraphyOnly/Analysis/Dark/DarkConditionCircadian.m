@@ -10,7 +10,7 @@ femaleAnimalIDs = {'AO5', 'AO6', 'AO8'};
 conditions = {'FullDark', '300LuxEnd'};
 
 % Read the combined data table
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8Dark_binned_data.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
 
 %% Filter data for Dark/Dark and 300LuxEnd conditions and specific animals
 condition_data = combined_data(ismember(combined_data.Condition, conditions) & ismember(combined_data.Animal, animalIDs), :);
@@ -31,27 +31,28 @@ plotAnimalData(female_data, 'Females (AO5, AO6, AO8)');
 function plotAnimalData(data, titleText)
     bins = unique(data.Bin);
     
-    % Add an artificial "Week 6" bin for '300LuxEnd' data
+    % Add an artificial "Week 6" bin for '300LuxEnd' data, don't worry
+    % about this lolololol
     lux300_data = data(strcmp(data.Condition, '300LuxEnd'), :);
     if ~isempty(lux300_data)
         lux300_data.Bin = repmat(6, height(lux300_data), 1);
         data = [data; lux300_data]; % Append the 300LuxEnd data with Bin=6
     end
     
-    figure('Name', ['Total Animal Circadian Sums Over 48 Hours - ' titleText], 'NumberTitle', 'off');
+    figure('Name', ['All Animal Circadian Means Over 48 Hours - ' titleText], 'NumberTitle', 'off');
     for i = 1:max(bins)
         % Filter data for the current bin
         bin_data = data(data.Bin == i, :);
         
         % Extract hour from datetime data
-        bin_data.Hour = hour(bin_data.Date);
+        bin_data.Hour = hour(bin_data.DateZT);
         
         % Summarize 'SelectedPixelDifference' by 'Hour'
-        hourlySum = groupsummary(bin_data, 'Hour', 'sum', 'SelectedPixelDifference');
+        hourlyMean = groupsummary(bin_data, 'Hour', 'mean', 'SelectedPixelDifference');
         
         % Prepare data for 48-hour plot
-        hours48 = [hourlySum.Hour; hourlySum.Hour + 24]; % Append hours 0-23 with 24-47
-        sums48 = [hourlySum.sum_SelectedPixelDifference; hourlySum.sum_SelectedPixelDifference]; % Repeat the sums
+        hours48 = [hourlyMean.Hour; hourlyMean.Hour + 24]; % Append hours 0-23 with 24-47
+        means48 = [hourlyMean.mean_SelectedPixelDifference; hourlyMean.mean_SelectedPixelDifference]; % Repeat the means
         
         % Variables for plot titles and figure names
         if i == 6
@@ -62,7 +63,7 @@ function plotAnimalData(data, titleText)
         
         % Create the subplot
         subplot(6, 1, i);
-        b1 = bar(hours48, sums48, 'BarWidth', 1);
+        b1 = bar(hours48, means48, 'BarWidth', 1);
         addShadedAreaToPlotZT48Hour();
         title(weekTitle, 'FontSize', 16, 'FontWeight', 'bold');
         xlabel('Hour of the Day', 'FontSize', 14, 'FontWeight', 'bold');
