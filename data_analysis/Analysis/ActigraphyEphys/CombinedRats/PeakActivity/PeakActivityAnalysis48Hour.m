@@ -1,6 +1,6 @@
 %% Overall analysis of circadian 24-hour activity
 % calculates movement peaks PER animal, so just looking at peak time
-% binned per hour (out of 24 hours) and summed
+% binned per hour (out of 24 hours) and averaged
 
 % Read in the combined data
 combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohortData.csv');
@@ -12,7 +12,7 @@ conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
 % Normalize condition names to be valid field names
 validConditionNames = strcat('Cond_', conditions);
 
-normalizedActivity = struct();
+SelectedPixelDifference = struct();
 meanActivity48Hours = struct();
 
 % Initialize structure to hold combined data for each condition
@@ -33,8 +33,8 @@ for i = 1:length(ratIDs)
         ratConditionData = combinedData(strcmp(combinedData.Animal, ratID) & strcmp(combinedData.Condition, condition), :);
         
         if ~isempty(ratConditionData)
-            dateData = ratConditionData.Date; % Datetime data
-            activityData = ratConditionData.NormalizedActivity;
+            dateData = ratConditionData.DateZT; % Datetime data
+            activityData = ratConditionData.SelectedPixelDifference;
             
             % Extract hour from datetime data
             hours = hour(dateData);
@@ -48,8 +48,8 @@ for i = 1:length(ratIDs)
             binIndices = binIndices(validIndices);
             activityData = activityData(validIndices);
             
-            % Calculate sum of activity for each bin
-            binnedActivity = accumarray(binIndices, activityData, [24, 1], @sum, NaN);
+            % Calculate mean of activity for each bin
+            binnedActivity = accumarray(binIndices, activityData, [24, 1], @mean, NaN);
             
             % Calculate z-score normalization for the binned activity
             meanActivity = mean(binnedActivity, 'omitnan');
@@ -65,7 +65,7 @@ for i = 1:length(ratIDs)
             zscoredActivity48 = [zscoredActivity; zscoredActivity];
             
             % Store results for each animal and condition
-            normalizedActivity.(ratID).(validCondition).binnedActivity = zscoredActivity48;
+            SelectedPixelDifference.(ratID).(validCondition).binnedActivity = zscoredActivity48;
             
             % Collect data for mean plot
             combinedActivity.(validCondition) = [combinedActivity.(validCondition); zscoredActivity48'];
@@ -76,7 +76,7 @@ for i = 1:length(ratIDs)
     end
 end
 
-% Graphical representation of normalized activity for all rats and conditions
+% Graphical representation of SelectedPixelDifference for all rats and conditions
 figure;
 hold on;
 
@@ -96,10 +96,10 @@ for j = 1:length(validConditionNames)
     for i = 1:length(ratIDs)
         ratID = ratIDs{i};
         
-        if isfield(normalizedActivity, ratID) && isfield(normalizedActivity.(ratID), validCondition)
-            binnedActivity48 = normalizedActivity.(ratID).(validCondition).binnedActivity;
+        if isfield(SelectedPixelDifference, ratID) && isfield(SelectedPixelDifference.(ratID), validCondition)
+            binnedActivity48 = SelectedPixelDifference.(ratID).(validCondition).binnedActivity;
             
-            % Plot each rat's z-score normalized activity data
+            % Plot each rat's activity
             plot(0:47, binnedActivity48, 'DisplayName', sprintf('%s - %s', ratID, conditions{j}), 'Color', colors(j, :));
             conditionPlotted = true;
             legendEntries{end+1} = sprintf('%s - %s', ratID, conditions{j});
@@ -113,12 +113,10 @@ for j = 1:length(validConditionNames)
 end
 
 xlabel('Hour of the Day', 'FontSize', 20, 'FontWeight', 'bold');
-ylabel('Normalized Activity', 'FontSize', 20, 'FontWeight', 'bold');
-title('Normalized Activity Over 48 Hours for All Rats', 'FontSize', 20, 'FontWeight', 'bold');
+ylabel('Activity', 'FontSize', 20, 'FontWeight', 'bold');
+title('Activity Over 48 Hours for All Rats', 'FontSize', 20, 'FontWeight', 'bold');
 legend(legendEntries, 'Location', 'BestOutside', 'FontSize', 20);
 hold off;
-
-disp('48-hour z-score normalized activity analysis and plots generated and saved.');
 
 %% functions
 % Function to add a shaded area to the current plot

@@ -16,22 +16,22 @@ AnalyzeCircadianRunning(combined_data, false, 'All Rats');
 
 %% plots bars of sums at each hour of the day
 % Creating an 'Hour' column that represents just the hour part of 'Date'
-combined_data.Hour = hour(combined_data.Date);
+combined_data.Hour = hour(combined_data.DateZT);
 
 % Now summarize 'SelectedPixelDifference' by the 'Hour' column across all entries in dataTable
-hourlySum = groupsummary(combined_data, 'Hour', 'sum', 'SelectedPixelDifference');
+hourlyMean = groupsummary(combined_data, 'Hour', 'mean', 'SelectedPixelDifference');
 
 % Prepare data for 48-hour plot
-hours48 = [hourlySum.Hour; hourlySum.Hour + 24]; % Append hours 0-23 with 24-47
-sums48 = [hourlySum.sum_SelectedPixelDifference; hourlySum.sum_SelectedPixelDifference]; % Repeat the sums
+hours48 = [hourlyMean.Hour; hourlyMean.Hour + 24]; % Append hours 0-23 with 24-47
+means48 = [hourlyMean.mean_SelectedPixelDifference; hourlyMean.mean_SelectedPixelDifference]; % Repeat the sums
 
 % Create the plot
 figure;
-b1 = bar(hours48, sums48, 'BarWidth', 1);
+b1 = bar(hours48, means48, 'BarWidth', 1);
 addShadedAreaToPlotZT48Hour();
 title('Total Animal Circadian Sums Over 48 Hours', 'FontSize', 20, 'FontWeight', 'bold'); % Increase font size and bold
 xlabel('Hour of the Day', 'FontSize', 18, 'FontWeight', 'bold'); % Add xlabel with increased font size and bold
-ylabel('Sum of Selected Pixel Difference', 'FontSize', 18, 'FontWeight', 'bold'); % Add ylabel with increased font size and bold
+ylabel('Mean of Selected Pixel Difference', 'FontSize', 18, 'FontWeight', 'bold'); % Add ylabel with increased font size and bold
 set(gca, 'FontSize', 14, 'FontWeight', 'bold'); % Increase font size and bold for axis labels
 
 % Ensure the bars are on top
@@ -43,19 +43,19 @@ data_300lux = combined_data(strcmp(combined_data.Condition, '300Lux'), :);
 data_1000lux_week4 = combined_data(strcmp(combined_data.Condition, '1000Lux4'), :);
 
 % Create 'Hour' column for both subsets
-data_300lux.Hour = hour(data_300lux.Date);
-data_1000lux_week4.Hour = hour(data_1000lux_week4.Date);
+data_300lux.Hour = hour(data_300lux.DateZT);
+data_1000lux_week4.Hour = hour(data_1000lux_week4.DateZT);
 
-% Summarize 'NormalizedActivity' by 'Hour' for both subsets
-mean_300lux = groupsummary(data_300lux, 'Hour', 'mean', 'NormalizedActivity');
-mean_1000lux_week4 = groupsummary(data_1000lux_week4, 'Hour', 'mean', 'NormalizedActivity');
+% Summarize 'SelectedPixelDifference' by 'Hour' for both subsets
+mean_300lux = groupsummary(data_300lux, 'Hour', 'mean', 'SelectedPixelDifference');
+mean_1000lux_week4 = groupsummary(data_1000lux_week4, 'Hour', 'mean', 'SelectedPixelDifference');
 
 % Ensure both tables are sorted by 'Hour' for direct subtraction
 mean_300lux = sortrows(mean_300lux, 'Hour');
 mean_1000lux_week4 = sortrows(mean_1000lux_week4, 'Hour');
 
 % Subtract means: 1000Lux4 - 300Lux
-difference = mean_1000lux_week4.mean_NormalizedActivity - mean_300lux.mean_NormalizedActivity;
+difference = mean_1000lux_week4.mean_SelectedPixelDifference - mean_300lux.mean_SelectedPixelDifference;
 
 % Prepare data for 24-hour plot
 hours = mean_300lux.Hour;
@@ -67,9 +67,9 @@ b1 = bar(hours, difference, 'BarWidth', 1);
 addShadedAreaToPlotZT24Hour();
 
 % Set plot title and labels
-title('Difference in NormalizedActivity: 1000 Lux Week4 - 300 Lux', 'FontSize', 20, 'FontWeight', 'bold'); % Increase font size and bold
+title('Difference in SelectedPixelDifference: 1000 Lux Week4 - 300 Lux', 'FontSize', 20, 'FontWeight', 'bold'); % Increase font size and bold
 xlabel('Hour of Day', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
-ylabel('Difference in NormalizedActivity', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
+ylabel('Difference in SelectedPixelDifference', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
 set(gca, 'FontSize', 14, 'FontWeight', 'bold'); % Increase font size and bold for axis labels
 
 % Ensure the bars are on top
@@ -84,8 +84,8 @@ data_300lux = combined_data(strcmp(combined_data.Condition, '300Lux'), :);
 data_1000lux_week4 = combined_data(strcmp(combined_data.Condition, '1000Lux4'), :);
 
 % Create 'Hour' column for both subsets
-data_300lux.Hour = hour(data_300lux.Date);
-data_1000lux_week4.Hour = hour(data_1000lux_week4.Date);
+data_300lux.Hour = hour(data_300lux.DateZT);
+data_1000lux_week4.Hour = hour(data_1000lux_week4.DateZT);
 
 % Summarize 'SelectedPixelDifference' by 'Hour' for both subsets
 mean_300lux = groupsummary(data_300lux, 'Hour', 'mean', 'SelectedPixelDifference');
@@ -153,7 +153,7 @@ function addShadedAreaToPlotZT48Hour()
     
     % Additional Plot settings
     xlabel('Hour of Day (ZT Time)');
-    ylabel('Sum of PixelDifference');
+    ylabel('Mean of PixelDifference');
     xlim([-0.5, 47.5]);
     xticks(0:47);
     xtickangle(90);
@@ -176,7 +176,7 @@ function addShadedAreaToPlotZT24Hour()
     
     % Additional Plot settings
     xlabel('Hour of Day (ZT Time)');
-    ylabel('Sum of PixelDifference');
+    ylabel('Mean of PixelDifference');
     xlim([-0.5, 23.5]);
     xticks(0:23);
     xtickangle(0);

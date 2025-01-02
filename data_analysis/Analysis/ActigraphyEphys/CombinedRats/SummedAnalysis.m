@@ -14,7 +14,7 @@ condData = cell(length(conditions), 1);
 for condIdx = 1:length(conditions)
     condition = conditions{condIdx};
     filtData = combinedData(strcmp(combinedData.Condition, condition), :);
-    condData{condIdx} = filtData.NormalizedActivity;
+    condData{condIdx} = filtData.SelectedPixelDifference;
 end
 
 % Combine data into a single array and create a grouping variable
@@ -52,7 +52,7 @@ bar(means);
 hold on;
 errorbar(1:length(conditions), means, stderr, 'k', 'LineStyle', 'none');
 set(gca, 'XTick', 1:length(conditions), 'XTickLabel', conditions, 'FontSize', 14, 'FontWeight', 'bold'); % Increase font size and bold
-ylabel('Normalized Activity (z-score)', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
+ylabel('SelectedPixelDifference', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
 title('Comparison of Activity Across Lighting Conditions', 'FontSize', 20, 'FontWeight', 'bold'); % Increase font size and bold
 
 % Prepare data for sigstar
@@ -63,8 +63,8 @@ sigThreshold = 0.05; % Significance threshold
 for i = 1:size(comparisons, 1)
     if comparisons(i, 6) < sigThreshold % significance level
         groupIndices = comparisons(i, 1:2);
-        significanceGroups{end + 1} = groupIndices; %#ok<AGROW>
-        significancePValues(end + 1) = comparisons(i, 6); %#ok<AGROW>
+        significanceGroups{end + 1} = groupIndices; 
+        significancePValues(end + 1) = comparisons(i, 6); 
     end
 end
 

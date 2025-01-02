@@ -1,6 +1,6 @@
 %% Over Many Days Analysis
 % Using data directly from .csv
-% uses mean of NormalizedActivity
+% uses mean of SelectedPixelDifference
 
 % Reading in table
 fprintf('Reading in table\n');
@@ -31,16 +31,16 @@ for c = 1:length(conditions)
             continue; % Skip if there is no data for this day and condition
         end
         
-        meanNormalizedActivity = mean(dayData.NormalizedActivity);
-        stdError = std(dayData.NormalizedActivity) / sqrt(height(dayData));
+        meanSelectedPixelDifference = mean(dayData.SelectedPixelDifference);
+        stdError = std(dayData.SelectedPixelDifference) / sqrt(height(dayData));
         
         % Append to result arrays
-        allData = [allData; {condition, day, meanNormalizedActivity, stdError}];
+        allData = [allData; {condition, day, meanSelectedPixelDifference, stdError}];
     end
 end
 
 % Convert to table for easier plotting
-allDataTable = cell2table(allData, 'VariableNames', {'Condition', 'Day', 'MeanNormalizedActivity', 'StdError'});
+allDataTable = cell2table(allData, 'VariableNames', {'Condition', 'Day', 'MeanSelectedPixelDifference', 'StdError'});
 data = allDataTable;
 
 % Initialize arrays for plot data
@@ -64,7 +64,7 @@ for c = 1:length(conditions)
     for d = day_range
         % Filter the table for the current condition and day
         idx = strcmp(data.Condition, condition) & data.Day == d;
-        condition_mean_activity = [condition_mean_activity; data.MeanNormalizedActivity(idx)];
+        condition_mean_activity = [condition_mean_activity; data.MeanSelectedPixelDifference(idx)];
         condition_std_error = [condition_std_error; data.StdError(idx)];
         x_ticks = [x_ticks; sprintf('%s Day %d', condition, d)];
         
@@ -107,7 +107,7 @@ text(17.5, min(ylim)-0.05*range(ylim), '1000Lux4', 'HorizontalAlignment', 'cente
 text(24.5, min(ylim)-0.05*range(ylim), 'sleep_deprivation', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
 
 % Labels and title
-ylabel('Mean Normalized Activity');
+ylabel('Mean Activity');
 title('Activity Under Different Lighting Conditions');
 xlim([0, length(mean_activity)+1]);
 
