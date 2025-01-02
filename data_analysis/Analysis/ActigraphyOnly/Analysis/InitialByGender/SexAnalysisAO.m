@@ -7,10 +7,17 @@
 % 4. Plotting 48-hour and 24-hour activity profiles by gender and condition.
 % 5. Calculating and plotting differences in activity between conditions.
 
+%% Synopsis
+% This MATLAB script processes and analyzes activity data for eight rats,
+% divided by gender and under different lighting conditions (300Lux, 1000LuxStart, 1000LuxEnd).
+% The analysis includes assigning gender, segmenting 1000Lux data into 'Start' and 'End',
+% circadian running analysis, plotting activity profiles over 48-hour and 24-hour periods,
+% and calculating differences in mean activities between conditions.
+
 %% Parameters
-animalIDs = {'AO1', 'AO2', 'AO3', 'AO4', 'AO5', 'AO6', 'AO7', 'AO8'};
-genders = {'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female'};
-conditions = {'300Lux', '1000LuxStart', '1000LuxEnd'};
+animalIDs = {'AO1', 'AO2', 'AO3', 'AO4', 'AO5', 'AO6', 'AO7', 'AO8'}; % List of animal IDs
+genders = {'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female'}; % Corresponding genders
+conditions = {'300Lux', '1000LuxStart', '1000LuxEnd'}; % Conditions to analyze
 
 % Read the combined data table
 combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
@@ -19,7 +26,7 @@ combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah
 disp('Column names in the data:');
 disp(combined_data.Properties.VariableNames);
 
-% Assuming 'SelectedPixelDifference' and other columns of interest
+% Correct column name for SelectedPixelDifference
 selectedPixelDifferenceColumn = 'SelectedPixelDifference';
 
 %% Assign each data point a gender
@@ -53,11 +60,13 @@ for i = 1:length(animalIDs)
 end
 
 %% Analyze Circadian Running
-% Utilize a custom function for this specific analysis
+% Utilize a custom function for circadian running analysis
 AnalyzeCircadianRunningGender(combined_data, false, 'All Rats');
 
 %% Peak Analysis AO
 selectedPixelDifferenceActivity = struct();
+
+% Create valid condition names for struct fields
 validConditionNames = strcat('Cond', conditions);
 
 for i = 1:length(animalIDs)
@@ -107,12 +116,11 @@ for i = 1:length(animalIDs)
                 
                 selectedPixelDifferenceActivity.(gender).(validSubcondition) = [selectedPixelDifferenceActivity.(gender).(validSubcondition); zscoredActivity48'];
             else
-                fprintf('Column "Date" or "SelectedPixelDifference" not found for Animal %s under %s\n', animalID, subcondition);
+                fprintf('Column "DateZT" or "SelectedPixelDifference" not found for Animal %s under %s\n', animalID, subcondition);
             end
         else
             fprintf('No data found for Animal %s under %s\n', animalID, subcondition);
         end
-        
     end
 end
 
@@ -124,6 +132,7 @@ fill([36 47 47 36], [-3 -3 4 4], [0.7 0.7 0.7], 'EdgeColor', 'none', 'FaceAlpha'
 colors = lines(6);
 legendEntries = {};
 
+% Plot results for each valid condition and gender
 for j = 1:length(validConditionNames)
     validSubcondition = validConditionNames{j};
     genderList = {'Male', 'Female'};
@@ -150,7 +159,7 @@ grid on;
 set(gca, 'LineWidth', 1.5, 'FontSize', 14);
 hold off;
 
-disp('48-hour z-score activity analysis and plots generated and saved.');
+disp('48-hour z-score activity analysis and plots generated.');
 
 %% Circadian Analysis AO
 % Pool data by gender and plot means at each hour of the day
@@ -169,28 +178,34 @@ b2 = bar(hours48, meansFemale48, 'FaceColor', 'r', 'BarWidth', 0.5, 'DisplayName
 addShadedAreaToPlotZT48Hour();
 
 uistack(b1, 'top'); 
-uistack(b2, 'top'); 
+uistack(b2, 'top');
 
 title('Animal Circadian Means Over 48 Hours by Gender', 'FontSize', 20, 'FontWeight', 'bold');
 xlabel('Hour of the Day', 'FontSize', 18, 'FontWeight', 'bold');
 ylabel('Mean of SelectedPixelDifference', 'FontSize', 18, 'FontWeight', 'bold');
 legend('Location', 'BestOutside');
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
-
 hold off;
 
 %% Functions
 
 function addShadedAreaToPlotZT48Hour()
+    % This function adds shaded areas to the plot to indicate dark phases
     hold on;
+    
+    % Define x and y coordinates for the shaded areas
     x_shaded1 = [12, 24, 24, 12];
     y_lim = ylim;
     y_shaded1 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
     x_shaded2 = [36, 48, 48, 36];
     y_shaded2 = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
-    fill_color = [0.7, 0.7, 0.7];
+    
+    fill_color = [0.7, 0.7, 0.7]; % Light gray color for shading
+    
+    % Add shaded areas to the plot
     fill(x_shaded1, y_shaded1, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     fill(x_shaded2, y_shaded2, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    
     xlabel('Hour of Day (ZT Time)');
     ylabel('Sum of PixelDifference');
     xlim([-0.5, 47.5]);
@@ -200,12 +215,19 @@ function addShadedAreaToPlotZT48Hour()
 end
 
 function addShadedAreaToPlotZT24Hour()
+    % This function adds shaded areas to the plot to indicate dark phases
     hold on;
+    
+    % Define x and y coordinates for the shaded area
     x_shaded = [12, 24, 24, 12];
     y_lim = ylim;
     y_shaded = [y_lim(1), y_lim(1), y_lim(2), y_lim(2)];
-    fill_color = [0.7, 0.7, 0.7];
+
+    fill_color = [0.7, 0.7, 0.7]; % Light gray color for shading
+
+    % Add shaded area to the plot without adding it to the legend
     fill(x_shaded, y_shaded, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    
     xlabel('Hour of Day (ZT Time)');
     ylabel('Sum of PixelDifference');
     xlim([-0.5, 23.5]);
@@ -214,17 +236,22 @@ function addShadedAreaToPlotZT24Hour()
     hold off;
 end
 
-%% Summarize Data
+%% Summarize Data Functions
 function aggregatedData = aggregate_daily_means(data, selectedPixelDifferenceColumn)
+    % This function aggregates data to daily means
     aggregatedData = varfun(@mean, data, 'InputVariables', selectedPixelDifferenceColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
+    
     meanColumnName = ['mean_' selectedPixelDifferenceColumn];
     if ismember(meanColumnName, aggregatedData.Properties.VariableNames)
         meanColumn = aggregatedData.(meanColumnName);
     else
         error('The column %s does not exist in aggregatedData.', meanColumnName);
     end
+    
     stdError = varfun(@std, data, 'InputVariables', selectedPixelDifferenceColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
     stdErrorValues = stdError{:, ['std_' selectedPixelDifferenceColumn]} ./ sqrt(aggregatedData.GroupCount);
+
+    % Add new columns for mean and standard error
     aggregatedData = addvars(aggregatedData, meanColumn, 'NewVariableNames', 'Mean_SelectedPixelDifference');
     aggregatedData = addvars(aggregatedData, stdErrorValues, 'NewVariableNames', 'StdError');
     aggregatedData.GroupCount = []; % Remove the GroupCount variable

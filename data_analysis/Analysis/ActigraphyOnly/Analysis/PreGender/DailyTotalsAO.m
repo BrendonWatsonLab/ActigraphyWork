@@ -6,24 +6,24 @@ combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah
 
 %% Plotting
 conditions = {'300Lux', '1000Lux'};
-day_range = 1:40;
-% Now, aggregate and average the data by relative day and condition
+day_range = 1:40; % Day range from 1 to 40 for analysis
 fprintf('Aggregating and averaging data by relative day, condition, and animal...\n');
+
 allAnimalData = {};
 colors = {'b', 'r'}; % Colors for each condition
 
 % Compute mean selected pixel difference for each animal per day per condition
 for c = 1:length(conditions)
     condition = conditions{c};
-    for day = day_range % Up to 40 days per condition
-        uniqueAnimals = unique(combined_data.Animal);
+    for day = day_range
+        uniqueAnimals = unique(combined_data.Animal); % Get unique animal IDs
         for a = 1:length(uniqueAnimals)
             animal = uniqueAnimals{a};
             % Use floor to categorize by the integer part of RelativeDay
             animalDayData = combined_data(strcmp(combined_data.Condition, condition) & ...
                                           floor(combined_data.RelativeDay) == day & ...
                                           strcmp(combined_data.Animal, animal), :);
-            
+                                          
             if isempty(animalDayData)
                 continue; % Skip if there is no data for this animal, day, and condition
             end
@@ -38,16 +38,17 @@ end
 % Convert to table for easier processing
 allAnimalDataTable = cell2table(allAnimalData, 'VariableNames', {'Condition', 'Day', 'Animal', 'MeanSelectedPixelDifference'});
 
-% Initialize arrays for plot data
+%% Initialize arrays for plot data
 mean_activity = [];
 std_error = [];
 x_ticks = {};
 x_tick_labels = {};
 
-h = []; % Array to store plot handles for legend
-
 figure;
 hold on;
+
+% Variables to store plot handles for the legend
+h = []; 
 
 for c = 1:length(conditions)
     condition = conditions{c};
@@ -102,14 +103,14 @@ for b = section_boundaries
 end
 
 % Adjust custom x-axis labels below the graph
-text_y_pos = min(ylim)-0.1*range(ylim); % Adjusted y position to avoid overlap
+text_y_pos = min(ylim) - 0.1 * range(ylim); % Adjusted y position to avoid overlap
 text(17.5, text_y_pos, '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 20, 'FontWeight', 'bold');
 text(52.5, text_y_pos, '1000Lux', 'HorizontalAlignment', 'center', 'FontSize', 20, 'FontWeight', 'bold');
 
 % Labels, title, and x-axis adjustment
 ylabel('Mean Activity', 'FontSize', 20, 'FontWeight', 'bold'); % Larger font size for the y-label
 title('Activity Under Different Lighting Conditions', 'FontSize', 20, 'FontWeight', 'bold');
-xlim([0, length(mean_activity)+1]);
+xlim([0, length(mean_activity) + 1]);
 
 % Improving Visibility and Aesthetics
 set(gca, 'FontSize', 20); % Set the axis tick labels font size
@@ -117,9 +118,8 @@ grid on;
 legend(h, conditions, 'Location', 'Best', 'FontSize', 20);
 hold off;
 
-%% Creating Per Day Plots
-% Unique animals in the dataset
-uniqueAnimals = unique(combined_data.Animal);
+%% Creating Per Day Plots for Individual Animals
+uniqueAnimals = unique(combined_data.Animal); % Unique animals in the dataset
 
 for a = 1:length(uniqueAnimals)
     animal = uniqueAnimals{a};
@@ -131,10 +131,11 @@ for a = 1:length(uniqueAnimals)
     x_ticks = {};
     x_tick_labels = {};
     
-    h = []; % Array to store plot handles for legend
-
     figure;
     hold on;
+
+    % Array to store plot handles for the legend
+    h = []; 
 
     for c = 1:length(conditions)
         condition = conditions{c};
@@ -195,13 +196,13 @@ for a = 1:length(uniqueAnimals)
         end
 
         % Add custom x-axis labels below the graph
-        text(17.5, min(ylim)-0.05*range(ylim), '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-        text(52.5, min(ylim)-0.05*range(ylim), '1000Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+        text(17.5, min(ylim) - 0.05 * range(ylim), '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+        text(52.5, min(ylim) - 0.05 * range(ylim), '1000Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
 
         % Labels and title
         ylabel('Mean Activity');
         title(['Activity Under Different Lighting Conditions for Animal: ', animal]);
-        xlim([0, length(mean_activity)+1]);
+        xlim([0, length(mean_activity) + 1]);
     end
 
     % Improving Visibility and Aesthetics

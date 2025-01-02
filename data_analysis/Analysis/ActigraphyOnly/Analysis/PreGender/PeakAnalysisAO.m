@@ -13,7 +13,7 @@ for i = 1:length(animalIDs)
     animalID = animalIDs{i};
     
     for j = 1:length(conditions)
-        condition = conditions{j};   % Syntax fix: conditions{j}
+        condition = conditions{j};
         validCondition = validConditionNames{j};
         
         % Filter data for the current animal and condition
@@ -214,6 +214,7 @@ hold off;
 disp('48-hour z-score normalized activity analysis and plots generated and saved.');
 
 %% functions
+
 % Function to add a shaded area to the current plot
 function addShadedAreaToPlotZT48Hour()
     hold on;

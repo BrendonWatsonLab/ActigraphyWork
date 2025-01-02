@@ -3,42 +3,43 @@
 % binning every 7 days, and plots the summed activity at each hour over a 48-hour period.
 % Only animals AO5-8 are considered.
 
-%% Parameters
-animalIDs = {'AO5', 'AO6', 'AO7', 'AO8'};
-maleAnimalID = 'AO7';
-femaleAnimalIDs = {'AO5', 'AO6', 'AO8'};
-conditions = {'FullDark', '300LuxEnd'};
+% Parameters
+animalIDs = {'AO5', 'AO6', 'AO7', 'AO8'}; % List of animal IDs to consider
+maleAnimalID = 'AO7'; % ID of the male animal
+femaleAnimalIDs = {'AO5', 'AO6', 'AO8'}; % IDs of the female animals
+conditions = {'FullDark', '300LuxEnd'}; % Conditions to analyze
 
 % Read the combined data table
 combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
 
-%% Filter data for Dark/Dark and 300LuxEnd conditions and specific animals
+% Filter data for Dark/Dark and 300LuxEnd conditions and specific animals
 condition_data = combined_data(ismember(combined_data.Condition, conditions) & ismember(combined_data.Animal, animalIDs), :);
 
-%% Assign each data point a 7-day bin
+% Assign each data point a 7-day bin
 condition_data.Bin = ceil(condition_data.RelativeDay / 7);
 
-%% Split data by sex
-male_data = condition_data(strcmp(condition_data.Animal, maleAnimalID), :);
-female_data = condition_data(ismember(condition_data.Animal, femaleAnimalIDs), :);
+% Split data by sex
+male_data = condition_data(strcmp(condition_data.Animal, maleAnimalID), :); % Data for the male animal
+female_data = condition_data(ismember(condition_data.Animal, femaleAnimalIDs), :); % Data for the female animals
 
-%% Summarize and plot activity data for male and female animals
+% Summarize and plot activity data for male and female animals
 plotAnimalData(male_data, 'Male (AO7)');
 plotAnimalData(female_data, 'Females (AO5, AO6, AO8)');
 
-%% Functions
+% Functions
 
 function plotAnimalData(data, titleText)
+    % This function plots the activity data for the given animals, separated by bins
     bins = unique(data.Bin);
     
-    % Add an artificial "Week 6" bin for '300LuxEnd' data, don't worry
-    % about this lolololol
+    % Add an artificial "Week 6" bin for '300LuxEnd' data
     lux300_data = data(strcmp(data.Condition, '300LuxEnd'), :);
     if ~isempty(lux300_data)
-        lux300_data.Bin = repmat(6, height(lux300_data), 1);
+        lux300_data.Bin = repmat(6, height(lux300_data), 1); % Assign to Bin 6
         data = [data; lux300_data]; % Append the 300LuxEnd data with Bin=6
     end
     
+    % Create a figure for plotting
     figure('Name', ['All Animal Circadian Means Over 48 Hours - ' titleText], 'NumberTitle', 'off');
     for i = 1:max(bins)
         % Filter data for the current bin
@@ -54,7 +55,7 @@ function plotAnimalData(data, titleText)
         hours48 = [hourlyMean.Hour; hourlyMean.Hour + 24]; % Append hours 0-23 with 24-47
         means48 = [hourlyMean.mean_SelectedPixelDifference; hourlyMean.mean_SelectedPixelDifference]; % Repeat the means
         
-        % Variables for plot titles and figure names
+        % Define titles for each week
         if i == 6
             weekTitle = '300LuxEnd';
         else
@@ -65,17 +66,19 @@ function plotAnimalData(data, titleText)
         subplot(6, 1, i);
         b1 = bar(hours48, means48, 'BarWidth', 1);
         addShadedAreaToPlotZT48Hour();
-        title(weekTitle, 'FontSize', 16, 'FontWeight', 'bold');
-        xlabel('Hour of the Day', 'FontSize', 14, 'FontWeight', 'bold');
-        ylabel('PixelSum', 'FontSize', 14, 'FontWeight', 'bold');
+        title(weekTitle, 'FontSize', 16, 'FontWeight', 'bold'); % Add title to each subplot
+        xlabel('Hour of the Day', 'FontSize', 14, 'FontWeight', 'bold'); % X-axis label
+        ylabel('PixelSum', 'FontSize', 14, 'FontWeight', 'bold'); % Y-axis label
         set(gca, 'FontSize', 12, 'FontWeight', 'bold'); % Increase font size and bold for axis labels
-        sgtitle(titleText);
+        sgtitle(titleText); % Add a super title above all subplots
+        
         % Ensure the bars are on top
         uistack(b1, 'top');
     end
 end
 
 function addShadedAreaToPlotZT48Hour()
+    % This function adds shaded areas to the plot to indicate light/dark cycles
     hold on;
     
     % Define x and y coordinates for the first shaded area (from ZT 0 to ZT 12)
@@ -105,6 +108,7 @@ function addShadedAreaToPlotZT48Hour()
     fill(x_shaded3, y_shaded3, light_gray, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     fill(x_shaded4, y_shaded4, dark_gray, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     
+    % X and Y labels for the plot
     xlabel('Hour of Day (ZT Time)');
     ylabel('Sum of Selected Pixel Difference');
     xlim([-0.5, 47.5]);

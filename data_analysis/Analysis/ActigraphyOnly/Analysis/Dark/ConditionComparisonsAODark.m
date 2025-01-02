@@ -2,7 +2,14 @@
 % aggregating data into daily means to avoid skewing caused by the large dataset,
 % providing more meaningful statistics.
 
-%% starting
+%% Synopsis
+% This script analyzes the activity data for animals AO1 to AO8, focusing specifically on
+% dark conditions. The data is aggregated into daily and weekly means to ensure that the
+% large dataset does not skew the results. Separate bar plots are generated for male and
+% female animals, showing the weekly averages of the SelectedPixelDifference under different
+% lighting conditions (300Lux, 1000Lux, FullDark, 300LuxEnd).
+
+%% Starting
 
 % Read the data from the CSV file
 combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
@@ -11,7 +18,7 @@ combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah 
 disp('Column names in the data:');
 disp(combinedData.Properties.VariableNames);
 
-% The correct column name for SPD
+% The correct column name for SelectedPixelDifference
 selectedPixelDifferenceColumn = 'SelectedPixelDifference';
 
 % Define male and female animals
@@ -71,9 +78,6 @@ function process_group(groupData, groupName, selectedPixelDifferenceColumn)
         end
         barOffset = barOffset + numWeeks;
     end
-
-    % Add significance stars if needed
-    % Note: You need an updated statistical analysis for weekly comparisons here
 
     % Generate the x-axis labels
     xTickLabels = repelem(conditions, numWeeksPerCondition);

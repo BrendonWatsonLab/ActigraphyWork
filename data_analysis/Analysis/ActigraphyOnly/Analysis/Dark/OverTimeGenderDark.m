@@ -1,11 +1,12 @@
 % Analysis for AO1-8, including dark conditions. Separated by male and
-% female. 
+% female.
 %
-% Average of SelectedPixelDifference
-% 
-% The stats are done by aggregating into daily means to ensure that
-% the large amount of data points isn't skewing the data. Will output a
-% line plot over time per day. 
+% This script analyzes the SelectedPixelDifference for different groups 
+% of animals under various lighting conditions (300Lux, 1000Lux, FullDark, 
+% 300LuxEnd). The data is processed by aggregating into daily means to 
+% avoid skewing due to a large number of data points. The script will 
+% output line plots showing the trend of SelectedPixelDifference over 
+% time for both male and female groups.
 
 % Reading in table
 fprintf('Reading in table\n');
@@ -19,6 +20,7 @@ max_day_per_condition = zeros(1, length(conditions));
 
 for i = 1:length(conditions)
     condition = conditions{i};
+    % Calculate the maximum number of days for each condition in the dataset
     max_day_per_condition(i) = floor(max(combined_data.RelativeDay(strcmp(combined_data.Condition, condition))));
 end
 
@@ -26,11 +28,11 @@ end
 maleAnimals = {'AO1', 'AO2', 'AO3', 'AO7'};
 femaleAnimals = {'AO4', 'AO5', 'AO6', 'AO8'};
 
-% Aggregation and Averaging
+% Separate data for males and females
 maleData = combined_data(ismember(combined_data.Animal, maleAnimals), :);
 femaleData = combined_data(ismember(combined_data.Animal, femaleAnimals), :);
 
-% Separate data processing function
+% Function to aggregate data by day
 function analyzedData = aggregate_data_by_day(data, conditions, max_days)
     analyzedData = {};
     
@@ -38,8 +40,9 @@ function analyzedData = aggregate_data_by_day(data, conditions, max_days)
         condition = conditions{c};
         max_day = max_days(c);
         
-        % Aggregating data by day
+        % Aggregating data by day for each condition
         for day = 1:max_day
+            % Extract daily data for the current condition and day
             dailyData = data(strcmp(data.Condition, condition) & ...
                              floor(data.RelativeDay) == day, :);
             
@@ -55,53 +58,52 @@ function analyzedData = aggregate_data_by_day(data, conditions, max_days)
     end
 end
 
-% Perform Aggregation
+% Perform aggregation for males and females
 maleAnalyzedData = aggregate_data_by_day(maleData, conditions, max_day_per_condition);
 femaleAnalyzedData = aggregate_data_by_day(femaleData, conditions, max_day_per_condition);
 
-% Convert to tables for easier manipulation
+% Convert the aggregated data into tables for easier manipulation
 maleAnalyzedTable = cell2table(maleAnalyzedData, 'VariableNames', {'Condition', 'Day', 'MeanSelectedPixelDifference', 'StdError'});
 femaleAnalyzedTable = cell2table(femaleAnalyzedData, 'VariableNames', {'Condition', 'Day', 'MeanSelectedPixelDifference', 'StdError'});
 
-% Plotting Function
+% Function to plot data
 function plot_data(groupName, analyzedTable, conditions, colors, max_day_per_condition)
     figure;
     hold on;
     
-    plot_offset = 0;
-    label_positions = [];
-    legend_handles = [];
-    x_tick_labels = [];
-    x_tick_positions = []; % To store positions for the x-tick labels
+    plot_offset = 0; % Offset for x-axis based on conditions
+    label_positions = []; % Store positions for x-axis labels
+    legend_handles = []; % Store legend handles for each condition
+    x_tick_labels = []; % Store x-tick labels
+    x_tick_positions = []; % Store positions for x-tick labels
     
     for c = 1:length(conditions)
         condition = conditions{c};
         color = colors{c};
         max_day = max_day_per_condition(c);
         
+        % Extract data for the current condition
         conditionData = analyzedTable(strcmp(analyzedTable.Condition, condition), :);
         x_values = plot_offset + (1:height(conditionData))'; % X-values for plotting
         
-        % Calculate mean, std, stderr
         meanActivity = conditionData.MeanSelectedPixelDifference;
         stdError = conditionData.StdError;
         
-        % Plot with error bars
+        % Plot data with error bars
         h = errorbar(x_values, meanActivity, stdError, 'o-', 'LineWidth', 1.5, 'MarkerSize', 6, ...
                      'MarkerFaceColor', color, 'Color', color);
         legend_handles = [legend_handles, h];
         
-        % Filling for std error
+        % Fill area for standard error
         fill([x_values; flipud(x_values)], ...
              [meanActivity - stdError; flipud(meanActivity + stdError)], ...
              color, 'FaceAlpha', 0.2, 'EdgeColor', 'none');
         
-        % Add day labels for the x-axis
-        x_tick_labels = [x_tick_labels, 1:max_day]; % Generate labels starting from 1 to max_day
-        x_tick_positions = [x_tick_positions, plot_offset + (1:max_day)]; % Store their positions
+        % Generate labels and positions for x-axis
+        x_tick_labels = [x_tick_labels, 1:max_day];
+        x_tick_positions = [x_tick_positions, plot_offset + (1:max_day)];
         
-        % Move the plot offset after the current condition
-        plot_offset = plot_offset + max_day;        
+        plot_offset = plot_offset + max_day; % Update plot offset
         label_positions = [label_positions, plot_offset];
     end
     
@@ -109,10 +111,12 @@ function plot_data(groupName, analyzedTable, conditions, colors, max_day_per_con
     set(gca, 'XTick', x_tick_positions);
     set(gca, 'XTickLabel', x_tick_labels);
     
+    % Add vertical lines to separate conditions
     for i = 1:length(label_positions)
         xline(label_positions(i), '--k', 'LineWidth', 1.5);
     end
     
+    % Set plot labels and title
     ylabel('Mean Selected Pixel Difference');
     title(sprintf('Activity Under Different Lighting Conditions - %s', groupName));
     xlim([0, plot_offset + 1]);
@@ -123,6 +127,6 @@ end
 % Define colors for conditions
 colors = {'b', 'r', 'k', 'g'}; 
 
-% Plotting data
+% Plot data for males and females
 plot_data('Males', maleAnalyzedTable, conditions, colors, max_day_per_condition);
 plot_data('Females', femaleAnalyzedTable, conditions, colors, max_day_per_condition);
