@@ -1,27 +1,34 @@
-%% Overall analysis of circadian 24-hour activity
-% calculates movement peaks PER animal, so just looking at peak time
-% binned per hour (out of 24 hours) and averaged
+%% Overview
+% This script performs an overall analysis of the 24-hour circadian activity data,
+% calculating movement peaks for each animal and condition, binning the data into hourly periods,
+% and averaging it for graphical representation. It normalizes the data using z-scores,
+% duplicates it to cover a 48-hour period, and plots the activity for all rats and conditions.
+% Gray shading is added to the plots to indicate specific time ranges.
 
-% Read in the combined data
+%% Overall analysis of circadian 24-hour activity
+% Calculates movement peaks PER animal, binned per hour (out of 24 hours) and averaged.
+
+% Read in the combined data from the specified CSV file
 combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohortData.csv');
 
-% List of rat IDs and conditions
+% List of unique rat IDs and predefined conditions
 ratIDs = unique(combinedData.Animal); % Automatically get unique rat IDs from the data
 conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
 
-% Normalize condition names to be valid field names
+% Normalize condition names to be valid field names (for struct use)
 validConditionNames = strcat('Cond_', conditions);
 
+% Initialize structures to hold selected pixel difference and mean activity for each condition
 SelectedPixelDifference = struct();
 meanActivity48Hours = struct();
 
-% Initialize structure to hold combined data for each condition
+% Initialize structure to hold combined data, intended for each condition
 combinedActivity = struct();
 for j = 1:length(validConditionNames)
     combinedActivity.(validConditionNames{j}) = [];
 end
 
-% Loop over each rat and condition to process data
+% Loop over each rat and condition to process the data
 for i = 1:length(ratIDs)
     ratID = ratIDs{i};
     
@@ -29,7 +36,7 @@ for i = 1:length(ratIDs)
         condition = conditions{j};
         validCondition = validConditionNames{j};
         
-        % Filter data for current rat and condition
+        % Filter data for the current rat and condition
         ratConditionData = combinedData(strcmp(combinedData.Animal, ratID) & strcmp(combinedData.Condition, condition), :);
         
         if ~isempty(ratConditionData)
@@ -67,7 +74,7 @@ for i = 1:length(ratIDs)
             % Store results for each animal and condition
             SelectedPixelDifference.(ratID).(validCondition).binnedActivity = zscoredActivity48;
             
-            % Collect data for mean plot
+            % Collect data for the mean plot
             combinedActivity.(validCondition) = [combinedActivity.(validCondition); zscoredActivity48'];
             fprintf('Data added for Rat: %s, Condition: %s\n', ratID, condition);
         else
@@ -112,14 +119,15 @@ for j = 1:length(validConditionNames)
     end
 end
 
+% Set plot titles and labels
 xlabel('Hour of the Day', 'FontSize', 20, 'FontWeight', 'bold');
 ylabel('Activity', 'FontSize', 20, 'FontWeight', 'bold');
 title('Activity Over 48 Hours for All Rats', 'FontSize', 20, 'FontWeight', 'bold');
-legend(legendEntries, 'Location', 'BestOutside', 'FontSize', 20);
+legend(legendEntries, 'Location', 'BestOutside', 'FontSize', 14);
 hold off;
 
 %% functions
-% Function to add a shaded area to the current plot
+% Function to add a shaded area to the current plot for a 48-hour period
 function addShadedAreaToPlotZT48Hour()
     hold on;
     
@@ -134,7 +142,7 @@ function addShadedAreaToPlotZT48Hour()
     
     fill_color = [0.7, 0.7, 0.7]; % Light gray color for the shading
     
-    % Add shaded areas to the plot
+    % Add shaded areas to the plot with 'HandleVisibility', 'off' to exclude from the legend
     fill(x_shaded1, y_shaded1, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     fill(x_shaded2, y_shaded2, fill_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
     

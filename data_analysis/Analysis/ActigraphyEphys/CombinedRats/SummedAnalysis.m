@@ -1,37 +1,46 @@
+%% Overview
+% This script reads activity data from a CSV file, segregating it by various light conditions.
+% It performs statistical analyses including one-way ANOVA and post-hoc multiple comparisons using Tukey's HSD test.
+% Finally, it visualizes the results using a bar plot with error bars representing standard errors,
+% and marks significant differences between conditions if the `sigstar` function is available.
+
 %% Bar Plot Overall
 % Using direct data from .csv (5 minute bins)
 
-% Plotting
+% Load and read data from the CSV file
 combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohortData.csv');
 
-% List of conditions for plotting
+% List of experimental conditions for plotting
 conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
 
-% Initialize cell arrays to store data
+% Initialize cell arrays to store data for each condition
 condData = cell(length(conditions), 1);
 
 % Collect data for each condition
 for condIdx = 1:length(conditions)
     condition = conditions{condIdx};
+    % Filter data based on the current condition
     filtData = combinedData(strcmp(combinedData.Condition, condition), :);
+    % Store the selected pixel difference values for the current condition
     condData{condIdx} = filtData.SelectedPixelDifference;
 end
 
-% Combine data into a single array and create a grouping variable
+% Combine data from all conditions into a single array and create a grouping variable
 allData = vertcat(condData{:});
 group = {};
 
 for condIdx = 1:length(conditions)
+    % Repeat the condition name for the number of data points in that condition
     group = [group; repmat(conditions(condIdx), length(condData{condIdx}), 1)];
 end
 
-% Convert group cell array to a categorical vector
+% Convert the group cell array to a categorical vector for ANOVA
 group = categorical(group);
 
-% Perform one-way ANOVA
+% Perform one-way ANOVA analysis
 [p, tbl, stats] = anova1(allData, group, 'off');
 
-% Output ANOVA p-value
+% Output the ANOVA p-value to the console
 fprintf('ANOVA p-value: %f\n', p);
 
 % Post-hoc multiple comparisons using Tukey's HSD test
@@ -42,33 +51,44 @@ means = zeros(length(conditions), 1);
 stderr = zeros(length(conditions), 1);
 
 for condIdx = 1:length(conditions)
+    % Calculate the mean of the selected pixel difference values
     means(condIdx) = mean(condData{condIdx});
-    stderr(condIdx) = std(condData{condIdx}) / sqrt(length(condData{condIdx})); % Standard error
+    % Calculate the standard error of the mean
+    stderr(condIdx) = std(condData{condIdx}) / sqrt(length(condData{condIdx}));
 end
 
-% Create the bar plot
+% Create the bar plot for visualizing the data
 figure;
-bar(means);
+bar(means);   % Plot the means as a bar chart
 hold on;
+% Add error bars to the bar chart
 errorbar(1:length(conditions), means, stderr, 'k', 'LineStyle', 'none');
-set(gca, 'XTick', 1:length(conditions), 'XTickLabel', conditions, 'FontSize', 14, 'FontWeight', 'bold'); % Increase font size and bold
-ylabel('SelectedPixelDifference', 'FontSize', 18, 'FontWeight', 'bold'); % Increase font size and bold
-title('Comparison of Activity Across Lighting Conditions', 'FontSize', 20, 'FontWeight', 'bold'); % Increase font size and bold
+% Customize the appearance of the plot
+set(gca, 'XTick', 1:length(conditions), ...
+          'XTickLabel', conditions, ...
+          'FontSize', 14, ...
+          'FontWeight', 'bold'); % Increase font size and bold
+ylabel('SelectedPixelDifference', ...
+       'FontSize', 18, ...
+       'FontWeight', 'bold'); % Increase font size and bold
+title('Comparison of Activity Across Lighting Conditions', ...
+      'FontSize', 20, ...
+      'FontWeight', 'bold'); % Increase font size and bold
 
-% Prepare data for sigstar
+% Prepare data for marking significance in the plot
 significanceGroups = {};
 significancePValues = [];
-sigThreshold = 0.05; % Significance threshold
+sigThreshold = 0.05; % Define the significance threshold
 
 for i = 1:size(comparisons, 1)
-    if comparisons(i, 6) < sigThreshold % significance level
+    if comparisons(i, 6) < sigThreshold % Only consider significant comparisons
         groupIndices = comparisons(i, 1:2);
         significanceGroups{end + 1} = groupIndices; 
         significancePValues(end + 1) = comparisons(i, 6); 
     end
 end
 
-% Add significance asterisks using sigstar if available
+% Add significance asterisks to the plot if `sigstar` function is available
 if exist('sigstar', 'file') == 2 && ~isempty(significanceGroups)
     % Calculate y-offset for significance lines
     numSigs = length(significanceGroups);

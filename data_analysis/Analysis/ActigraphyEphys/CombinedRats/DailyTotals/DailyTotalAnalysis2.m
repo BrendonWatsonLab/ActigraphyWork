@@ -1,28 +1,34 @@
+%% Overview
+% This script performs an analysis of activity data over multiple days using mean and standard error of SelectedPixelDifference.
+% It reads the data from a CSV file, aggregates and averages the data by relative day and condition,
+% and generates a plot of mean activity with error bars for different lighting conditions.
+% The data is plotted with sectioned x-axis to clearly separate the conditions, and visual enhancements are added.
+
 %% Over Many Days Analysis
 % Using data directly from .csv
-% uses mean of SelectedPixelDifference
+% Uses mean and standard error of SelectedPixelDifference
 
 % Reading in table
 fprintf('Reading in table\n');
 
-% reads in data from .csv
+% Reads in data from .csv
 combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohortData.csv');
 
 % Define conditions and their corresponding day ranges
 conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
-day_ranges = {1:7, 1:7, 1:7, 1:3}; % day ranges for each condition
-% day_range = 1:7; % Obsolete
+day_ranges = {1:7, 1:7, 1:7, 1:3}; % Day ranges for each condition
 
-% Now, aggregate and average the data by relative day and condition
+% Aggregate and average the data by relative day and condition
 fprintf('Aggregating and averaging data by relative day and condition...\n');
-allData = {};
-conditionDayLabels = {};
-colors = {'b', 'r', 'k', 'g'}; % Colors for each condition, adding 'g' for the fourth condition
+allData = {}; % Initialize cell array to hold aggregated data
+conditionDayLabels = {}; % Initialize cell array for condition-day labels
+colors = {'b', 'r', 'k', 'g'}; % Colors for each condition
 
 for c = 1:length(conditions)
     condition = conditions{c};
     day_range = day_ranges{c}; % Get the specific day range for the current condition
     for day = day_range
+        % Filter data for the current condition and day range
         dayData = combined_data(strcmp(combined_data.Condition, condition) & ...
                                 combined_data.RelativeDay >= day & ...
                                 combined_data.RelativeDay < day+1, :);
@@ -31,15 +37,16 @@ for c = 1:length(conditions)
             continue; % Skip if there is no data for this day and condition
         end
         
+        % Calculate mean and standard error of SelectedPixelDifference
         meanSelectedPixelDifference = mean(dayData.SelectedPixelDifference);
         stdError = std(dayData.SelectedPixelDifference) / sqrt(height(dayData));
         
-        % Append to result arrays
+        % Append results to the data array
         allData = [allData; {condition, day, meanSelectedPixelDifference, stdError}];
     end
 end
 
-% Convert to table for easier plotting
+% Convert to table for easier manipulation and plotting
 allDataTable = cell2table(allData, 'VariableNames', {'Condition', 'Day', 'MeanSelectedPixelDifference', 'StdError'});
 data = allDataTable;
 
@@ -48,7 +55,6 @@ mean_activity = [];
 std_error = [];
 x_ticks = {};
 x_tick_labels = {};
-
 h = []; % Array to store plot handles for legend
 
 figure;
@@ -73,12 +79,12 @@ for c = 1:length(conditions)
     end
     
     % Create the x-axis values specific to each condition
-    x_values = (c-1)*7 + (1:length(condition_mean_activity)); % multiplied by 7 so that there are gaps between the conditions in the plot
+    x_values = (c-1)*7 + (1:length(condition_mean_activity)); % Multiplied by 7 for gaps between conditions
     if strcmp(condition, 'sleep_deprivation')
-        x_values = (3*7) + (1:length(condition_mean_activity)); % Place 'sleep_deprivation' condition correctly after previous 3 conditions
+        x_values = (3*7) + (1:length(condition_mean_activity)); % Adjust x_values for 'sleep_deprivation'
     end
     
-    % Plotting with color for the condition and adding error bars
+    % Plot mean activity with error bars for each condition
     h(end+1) = errorbar(x_values, condition_mean_activity, condition_std_error, 'o-', ...
                         'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', color, 'Color', color);
     
@@ -89,29 +95,29 @@ end
 
 hold off;
 
-% Setting the sectioned x-axis
+% Set the sectioned x-axis
 set(gca, 'XTick', 1:length(mean_activity));
 set(gca, 'XTickLabel', x_tick_labels);
 
 % Adding section dividers and labels below the graph
 hold on;
-section_boundaries = [7.5, 14.5, 21.5]; % Added an additional boundary for the 4th condition
+section_boundaries = [7.5, 14.5, 21.5]; % Section boundaries for separating conditions
 for b = section_boundaries
     plot([b b], ylim, 'k--');
 end
 
-% Add custom x-axis labels below the graph
+% Add custom x-axis labels below the graph for each condition
 text(3.5, min(ylim)-0.05*range(ylim), '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
 text(10.5, min(ylim)-0.05*range(ylim), '1000Lux1', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
 text(17.5, min(ylim)-0.05*range(ylim), '1000Lux4', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
 text(24.5, min(ylim)-0.05*range(ylim), 'sleep_deprivation', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
 
 % Labels and title
-ylabel('Mean Activity');
-title('Activity Under Different Lighting Conditions');
+ylabel('Mean Activity', 'FontSize', 18, 'FontWeight', 'bold'); % Increased font size and bold
+title('Activity Under Different Lighting Conditions', 'FontSize', 20, 'FontWeight', 'bold'); % Increased font size and bold
 xlim([0, length(mean_activity)+1]);
 
-% Improving Visibility and Aesthetics
+% Improve visibility and aesthetics
 grid on;
-legend(h, conditions, 'Location', 'Best');
+legend(h, conditions, 'Location', 'Best', 'FontSize', 12); % Improved font size for the legend
 hold off;
