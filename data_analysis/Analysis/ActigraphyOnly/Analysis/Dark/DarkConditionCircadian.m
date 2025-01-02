@@ -1,5 +1,5 @@
 %% Analysis of Dark Condition Activity Over Time
-% This script analyzes the normalized activity in the Dark/Dark and 300LuxEnd conditions,
+% This script analyzes the activity in the Dark/Dark and 300LuxEnd conditions,
 % binning every 7 days, and plots the summed activity at each hour over a 48-hour period.
 % Only animals AO5-8 are considered.
 

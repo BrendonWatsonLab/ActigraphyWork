@@ -3,7 +3,7 @@ animalIDs = {'AO1', 'AO2', 'AO3', 'AO4', 'AO5', 'AO6', 'AO7', 'AO8'};
 conditions = {'300Lux', '1000Lux'};
 combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8binned_data.csv');
 
-normalizedActivity = struct();
+SelectedPixelDifferenceActivity = struct();
 
 % Normalize condition names to be valid field names
 validConditionNames = strcat('Cond_', conditions);
@@ -24,9 +24,9 @@ for i = 1:length(animalIDs)
             fprintf('Analyzing: Animal %s under %s\n', animalID, condition);
             
             % Assuming the data includes a 'Date' column in datetime format and a 'SelectedPixelDifference' column
-            if ismember('Date', dataTable.Properties.VariableNames) && ismember('SelectedPixelDifference', dataTable.Properties.VariableNames)   % Change to 'NormalizedActivity' if required
+            if ismember('Date', dataTable.Properties.VariableNames) && ismember('SelectedPixelDifference', dataTable.Properties.VariableNames)
                 dateData = dataTable.Date; % Datetime data
-                activityData = dataTable.SelectedPixelDifference; % Not sure whether it should be 'SelectedPixelDifference' or 'NormalizedActivity' - Please confirm
+                activityData = dataTable.SelectedPixelDifference;
                 
                 % Extract hour from datetime data
                 hours = hour(dateData);
@@ -40,8 +40,8 @@ for i = 1:length(animalIDs)
                 binIndices = binIndices(validIndices);
                 activityData = activityData(validIndices);
                 
-                % Calculate sum of activity for each bin
-                binnedActivity = accumarray(binIndices, activityData, [24, 1], @sum, NaN);
+                % Calculate means of activity for each bin
+                binnedActivity = accumarray(binIndices, activityData, [24, 1], @mean, NaN);
                 
                 % Calculate z-score normalization for the binned activity
                 meanActivity = mean(binnedActivity, 'omitnan');
@@ -57,7 +57,7 @@ for i = 1:length(animalIDs)
                 zscoredActivity48 = [zscoredActivity; zscoredActivity];
                 
                 % Store results for each animal and condition
-                normalizedActivity.(animalID).(validCondition).binnedActivity = zscoredActivity48;
+                SelectedPixelDifferenceActivity.(animalID).(validCondition).binnedActivity = zscoredActivity48;
             else
                 fprintf('Column "Date" or "SelectedPixelDifference" not found for Animal %s under %s\n', animalID, condition);
             end
@@ -85,8 +85,8 @@ for j = 1:length(validConditionNames)
     for i = 1:length(animalIDs)
         animalID = animalIDs{i};
         
-        if isfield(normalizedActivity, animalID) && isfield(normalizedActivity.(animalID), validCondition)
-            binnedActivity48 = normalizedActivity.(animalID).(validCondition).binnedActivity;
+        if isfield(SelectedPixelDifferenceActivity, animalID) && isfield(SelectedPixelDifferenceActivity.(animalID), validCondition)
+            binnedActivity48 = SelectedPixelDifferenceActivity.(animalID).(validCondition).binnedActivity;
             
             % Plot each animal's z-score normalized activity data
             plot(0:47, binnedActivity48, 'DisplayName', sprintf('%s - %s', animalID, conditions{j}), 'Color', colors(j, :));
@@ -98,14 +98,14 @@ for j = 1:length(validConditionNames)
 end
 
 xlabel('Hour of the Day', 'FontSize', 20, 'FontWeight', 'bold');
-ylabel('Normalized Activity', 'FontSize', 20, 'FontWeight', 'bold');
-title('Normalized Activity Over 48 Hours for All Animals', 'FontSize', 20, 'FontWeight', 'bold');
+ylabel('Activity', 'FontSize', 20, 'FontWeight', 'bold');
+title('Activity Over 48 Hours for All Animals', 'FontSize', 20, 'FontWeight', 'bold');
 legend(legendEntries, 'Location', 'BestOutside', 'FontSize', 20);
 hold off;
 
 disp('48-hour z-score normalized activity analysis and plots generated and saved.');
 
-normalizedActivity = struct();
+SelectedPixelDifferenceActivity = struct();
 
 % Normalize condition names to be valid field names
 validConditionNames = strcat('Cond_', conditions);
@@ -126,9 +126,9 @@ for i = 1:length(animalIDs)
             fprintf('Analyzing: Animal %s under %s\n', animalID, condition);
             
             % Assuming the data includes a 'Date' column in datetime format and a 'SelectedPixelDifference' column
-            if ismember('Date', dataTable.Properties.VariableNames) && ismember('SelectedPixelDifference', dataTable.Properties.VariableNames)   % Change to 'NormalizedActivity' if required
+            if ismember('Date', dataTable.Properties.VariableNames) && ismember('SelectedPixelDifference', dataTable.Properties.VariableNames)  
                 dateData = dataTable.Date; % Datetime data
-                activityData = dataTable.SelectedPixelDifference; % Not sure whether it should be 'SelectedPixelDifference' or 'NormalizedActivity' - Please confirm
+                activityData = dataTable.SelectedPixelDifference; 
                 
                 % Extract hour from datetime data
                 hours = hour(dateData);
@@ -142,8 +142,8 @@ for i = 1:length(animalIDs)
                 binIndices = binIndices(validIndices);
                 activityData = activityData(validIndices);
                 
-                % Calculate sum of activity for each bin
-                binnedActivity = accumarray(binIndices, activityData, [24, 1], @sum, NaN);
+                % Calculate means of activity for each bin
+                binnedActivity = accumarray(binIndices, activityData, [24, 1], @mean, NaN);
                 
                 % Calculate z-score normalization for the binned activity
                 meanActivity = mean(binnedActivity, 'omitnan');
@@ -159,7 +159,7 @@ for i = 1:length(animalIDs)
                 zscoredActivity48 = [zscoredActivity; zscoredActivity];
                 
                 % Store results for each animal and condition
-                normalizedActivity.(animalID).(validCondition).binnedActivity = zscoredActivity48;
+                SelectedPixelDifferenceActivity.(animalID).(validCondition).binnedActivity = zscoredActivity48;
             else
                 fprintf('Column "Date" or "SelectedPixelDifference" not found for Animal %s under %s\n', animalID, condition);
             end
@@ -189,8 +189,8 @@ for j = 1:length(validConditionNames)
     for i = 1:length(animalIDs)
         animalID = animalIDs{i};
         
-        if isfield(normalizedActivity, animalID) && isfield(normalizedActivity.(animalID), validCondition)
-            binnedActivity48 = normalizedActivity.(animalID).(validCondition).binnedActivity;
+        if isfield(SelectedPixelDifferenceActivity, animalID) && isfield(SelectedPixelDifferenceActivity.(animalID), validCondition)
+            binnedActivity48 = SelectedPixelDifferenceActivity.(animalID).(validCondition).binnedActivity;
             allBinnedActivities = [allBinnedActivities; binnedActivity48'];
         end 
     end
@@ -206,8 +206,8 @@ for j = 1:length(validConditionNames)
 end
 
 xlabel('Hour of the Day', 'FontSize', 20, 'FontWeight', 'bold');
-ylabel('Normalized Activity', 'FontSize', 20, 'FontWeight', 'bold');
-title('Normalized Activity Over 48 Hours for All Conditions', 'FontSize', 20, 'FontWeight', 'bold');
+ylabel('Activity', 'FontSize', 20, 'FontWeight', 'bold');
+title('Activity Over 48 Hours for All Conditions', 'FontSize', 20, 'FontWeight', 'bold');
 legend(legendEntries, 'Location', 'BestOutside', 'FontSize', 20);
 hold off;
 
@@ -235,7 +235,7 @@ function addShadedAreaToPlotZT48Hour()
     
     % Additional Plot settings
     xlabel('Hour of Day (ZT Time)');
-    ylabel('Sum of PixelDifference');
+    ylabel('Means of PixelDifference');
     xlim([-0.5, 47.5]);
     xticks(0:1:47);
     xtickangle(90);
@@ -258,7 +258,7 @@ function addShadedAreaToPlotZT24Hour()
     
     % Additional Plot settings
     xlabel('Hour of Day (ZT Time)');
-    ylabel('Sum of PixelDifference');
+    ylabel('Means of PixelDifference');
     xlim([-0.5, 23.5]);
     xticks(0:23);
     xtickangle(0);

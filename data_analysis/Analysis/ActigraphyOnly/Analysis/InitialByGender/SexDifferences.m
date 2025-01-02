@@ -10,7 +10,7 @@ genders = {'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female
 conditions = {'300Lux', '1000LuxStart', '1000LuxEnd'};
 
 % Read the combined data table
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8Dark_binned_data.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
 
 %% Assign each data point a gender
 combined_data.Gender = cell(height(combined_data), 1); % Initialize Gender column
@@ -53,24 +53,24 @@ data_male_1000LuxEnd = combined_data(strcmp(combined_data.Gender, 'Male') & strc
 data_female_1000LuxEnd = combined_data(strcmp(combined_data.Gender, 'Female') & strcmp(combined_data.Subcondition, '1000LuxEnd'), :);
 
 %% Create 'Hour' column that represents just the hour part of 'Date'
-data_male_300Lux.Hour = hour(data_male_300Lux.Date);
-data_female_300Lux.Hour = hour(data_female_300Lux.Date);
+data_male_300Lux.Hour = hour(data_male_300Lux.DateZT);
+data_female_300Lux.Hour = hour(data_female_300Lux.DateZT);
 
-data_male_1000LuxStart.Hour = hour(data_male_1000LuxStart.Date);
-data_female_1000LuxStart.Hour = hour(data_female_1000LuxStart.Date);
+data_male_1000LuxStart.Hour = hour(data_male_1000LuxStart.DateZT);
+data_female_1000LuxStart.Hour = hour(data_female_1000LuxStart.DateZT);
 
-data_male_1000LuxEnd.Hour = hour(data_male_1000LuxEnd.Date);
-data_female_1000LuxEnd.Hour = hour(data_female_1000LuxEnd.Date);
+data_male_1000LuxEnd.Hour = hour(data_male_1000LuxEnd.DateZT);
+data_female_1000LuxEnd.Hour = hour(data_female_1000LuxEnd.DateZT);
 
-%% Summarize 'NormalizedActivity' by 'Hour'
-mean_300Lux_male = groupsummary(data_male_300Lux, 'Hour', 'mean', 'NormalizedActivity');
-mean_300Lux_female = groupsummary(data_female_300Lux, 'Hour', 'mean', 'NormalizedActivity');
+%% Summarize 'SelectedPixelDifference' by 'Hour'
+mean_300Lux_male = groupsummary(data_male_300Lux, 'Hour', 'mean', 'SelectedPixelDifference');
+mean_300Lux_female = groupsummary(data_female_300Lux, 'Hour', 'mean', 'SelectedPixelDifference');
 
-mean_1000LuxStart_male = groupsummary(data_male_1000LuxStart, 'Hour', 'mean', 'NormalizedActivity');
-mean_1000LuxStart_female = groupsummary(data_female_1000LuxStart, 'Hour', 'mean', 'NormalizedActivity');
+mean_1000LuxStart_male = groupsummary(data_male_1000LuxStart, 'Hour', 'mean', 'SelectedPixelDifference');
+mean_1000LuxStart_female = groupsummary(data_female_1000LuxStart, 'Hour', 'mean', 'SelectedPixelDifference');
 
-mean_1000LuxEnd_male = groupsummary(data_male_1000LuxEnd, 'Hour', 'mean', 'NormalizedActivity');
-mean_1000LuxEnd_female = groupsummary(data_female_1000LuxEnd, 'Hour', 'mean', 'NormalizedActivity');
+mean_1000LuxEnd_male = groupsummary(data_male_1000LuxEnd, 'Hour', 'mean', 'SelectedPixelDifference');
+mean_1000LuxEnd_female = groupsummary(data_female_1000LuxEnd, 'Hour', 'mean', 'SelectedPixelDifference');
 
 % Ensure the tables are sorted by 'Hour' for direct comparison
 mean_300Lux_male = sortrows(mean_300Lux_male, 'Hour');
@@ -81,11 +81,11 @@ mean_1000LuxEnd_male = sortrows(mean_1000LuxEnd_male, 'Hour');
 mean_1000LuxEnd_female = sortrows(mean_1000LuxEnd_female, 'Hour');
 
 %% Subtract mean activities
-difference_male_start = mean_1000LuxStart_male.mean_NormalizedActivity - mean_300Lux_male.mean_NormalizedActivity;
-difference_female_start = mean_1000LuxStart_female.mean_NormalizedActivity - mean_300Lux_female.mean_NormalizedActivity;
+difference_male_start = mean_1000LuxStart_male.mean_SelectedPixelDifference - mean_300Lux_male.mean_SelectedPixelDifference;
+difference_female_start = mean_1000LuxStart_female.mean_SelectedPixelDifference - mean_300Lux_female.mean_SelectedPixelDifference;
 
-difference_male_end = mean_1000LuxEnd_male.mean_NormalizedActivity - mean_300Lux_male.mean_NormalizedActivity;
-difference_female_end = mean_1000LuxEnd_female.mean_NormalizedActivity - mean_300Lux_female.mean_NormalizedActivity;
+difference_male_end = mean_1000LuxEnd_male.mean_SelectedPixelDifference - mean_300Lux_male.mean_SelectedPixelDifference;
+difference_female_end = mean_1000LuxEnd_female.mean_SelectedPixelDifference - mean_300Lux_female.mean_SelectedPixelDifference;
 
 % Prepare data for 48-hour plots
 hours = mean_300Lux_male.Hour;
@@ -108,7 +108,7 @@ uistack(b2, 'top');
 
 title('Difference in Activity: 1000 Lux Start - 300 Lux by Gender over 48 Hours', 'FontSize', 20, 'FontWeight', 'bold');
 xlabel('Hour of the Day', 'FontSize', 18, 'FontWeight', 'bold');
-ylabel('Difference in Normalized Activity', 'FontSize', 18, 'FontWeight', 'bold');
+ylabel('Difference in Activity', 'FontSize', 18, 'FontWeight', 'bold');
 legend('Location', 'BestOutside', 'FontSize', 14);
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
 grid on;
@@ -126,7 +126,7 @@ uistack(b2, 'top');
 
 title('Difference in Activity: 1000 Lux End - 300 Lux by Gender over 48 Hours', 'FontSize', 20, 'FontWeight', 'bold');
 xlabel('Hour of the Day', 'FontSize', 18, 'FontWeight', 'bold');
-ylabel('Difference in Normalized Activity', 'FontSize', 18, 'FontWeight', 'bold');
+ylabel('Difference in Activity', 'FontSize', 18, 'FontWeight', 'bold');
 legend('Location', 'BestOutside', 'FontSize', 14);
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
 grid on;

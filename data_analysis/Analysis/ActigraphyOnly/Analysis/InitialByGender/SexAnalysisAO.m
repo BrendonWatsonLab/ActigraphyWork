@@ -4,9 +4,8 @@
 % 1. Assigning gender to each data point.
 % 2. Classifying 1000Lux data into 'Start' and 'End' conditions.
 % 3. Performing circadian running analysis.
-% 4. Normalizing activity data and analyzing peak activity.
-% 5. Plotting 48-hour and 24-hour activity profiles by gender and condition.
-% 6. Calculating and plotting differences in activity between conditions.
+% 4. Plotting 48-hour and 24-hour activity profiles by gender and condition.
+% 5. Calculating and plotting differences in activity between conditions.
 
 %% Parameters
 animalIDs = {'AO1', 'AO2', 'AO3', 'AO4', 'AO5', 'AO6', 'AO7', 'AO8'};
@@ -14,14 +13,14 @@ genders = {'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female
 conditions = {'300Lux', '1000LuxStart', '1000LuxEnd'};
 
 % Read the combined data table
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AO1-8Dark_binned_data.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
 
 % Display the column names to verify
 disp('Column names in the data:');
 disp(combined_data.Properties.VariableNames);
 
-% Assuming 'NormalizedActivity' and other columns of interest
-normalizedActivityColumn = 'NormalizedActivity';
+% Assuming 'SelectedPixelDifference' and other columns of interest
+selectedPixelDifferenceColumn = 'SelectedPixelDifference';
 
 %% Assign each data point a gender
 combined_data.Gender = cell(height(combined_data), 1); % Initialize Gender column
@@ -58,7 +57,7 @@ end
 AnalyzeCircadianRunningGender(combined_data, false, 'All Rats');
 
 %% Peak Analysis AO
-normalizedActivity = struct();
+selectedPixelDifferenceActivity = struct();
 validConditionNames = strcat('Cond', conditions);
 
 for i = 1:length(animalIDs)
@@ -74,8 +73,8 @@ for i = 1:length(animalIDs)
         if ~isempty(dataTable)
             fprintf('Analyzing: Animal %s under %s\n', animalID, subcondition);
             
-            if ismember('Date', dataTable.Properties.VariableNames) && ismember('SelectedPixelDifference', dataTable.Properties.VariableNames)
-                dateData = dataTable.Date; 
+            if ismember('DateZT', dataTable.Properties.VariableNames) && ismember('SelectedPixelDifference', dataTable.Properties.VariableNames)
+                dateData = dataTable.DateZT; 
                 activityData = dataTable.SelectedPixelDifference; 
                 
                 hours = hour(dateData);
@@ -98,15 +97,15 @@ for i = 1:length(animalIDs)
 
                 zscoredActivity48 = [zscoredActivity; zscoredActivity];
                 
-                if ~isfield(normalizedActivity, gender)
-                    normalizedActivity.(gender) = struct();
+                if ~isfield(selectedPixelDifferenceActivity, gender)
+                    selectedPixelDifferenceActivity.(gender) = struct();
                 end
                 
-                if ~isfield(normalizedActivity.(gender), validSubcondition)
-                    normalizedActivity.(gender).(validSubcondition) = [];
+                if ~isfield(selectedPixelDifferenceActivity.(gender), validSubcondition)
+                    selectedPixelDifferenceActivity.(gender).(validSubcondition) = [];
                 end
                 
-                normalizedActivity.(gender).(validSubcondition) = [normalizedActivity.(gender).(validSubcondition); zscoredActivity48'];
+                selectedPixelDifferenceActivity.(gender).(validSubcondition) = [selectedPixelDifferenceActivity.(gender).(validSubcondition); zscoredActivity48'];
             else
                 fprintf('Column "Date" or "SelectedPixelDifference" not found for Animal %s under %s\n', animalID, subcondition);
             end
@@ -131,8 +130,8 @@ for j = 1:length(validConditionNames)
     for genderIdx = 1:length(genderList)
         gender = genderList{genderIdx};
         
-        if isfield(normalizedActivity, gender) && isfield(normalizedActivity.(gender), validSubcondition)
-            meanBinnedActivity48 = mean(normalizedActivity.(gender).(validSubcondition), 1, 'omitnan');
+        if isfield(selectedPixelDifferenceActivity, gender) && isfield(selectedPixelDifferenceActivity.(gender), validSubcondition)
+            meanBinnedActivity48 = mean(selectedPixelDifferenceActivity.(gender).(validSubcondition), 1, 'omitnan');
             colorIdx = (j - 1) * 2 + genderIdx;
             
             plot(0:47, meanBinnedActivity48, 'DisplayName', sprintf('%s - %s', gender, validSubcondition), 'Color', colors(colorIdx, :), 'LineWidth', 2, 'MarkerSize', 4, 'Marker','.');
@@ -144,18 +143,18 @@ for j = 1:length(validConditionNames)
 end
 
 xlabel('Hour of the Day', 'FontSize', 20, 'FontWeight', 'bold');
-ylabel('Normalized Activity', 'FontSize', 20, 'FontWeight', 'bold');
-title('Normalized Activity Over 48 Hours by Gender', 'FontSize', 20, 'FontWeight', 'bold');
+ylabel('Activity', 'FontSize', 20, 'FontWeight', 'bold');
+title('Activity Over 48 Hours by Gender', 'FontSize', 20, 'FontWeight', 'bold');
 legend(legendEntries, 'Location', 'BestOutside', 'FontSize', 20);
 grid on;
 set(gca, 'LineWidth', 1.5, 'FontSize', 14);
 hold off;
 
-disp('48-hour z-score normalized activity analysis and plots generated and saved.');
+disp('48-hour z-score activity analysis and plots generated and saved.');
 
 %% Circadian Analysis AO
 % Pool data by gender and plot means at each hour of the day
-combined_data.Hour = hour(combined_data.Date);
+combined_data.Hour = hour(combined_data.DateZT);
 hourlyMeanMale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Male'), :), 'Hour', 'mean', 'SelectedPixelDifference');
 hourlyMeanFemale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Female'), :), 'Hour', 'mean', 'SelectedPixelDifference');
 
@@ -215,18 +214,18 @@ function addShadedAreaToPlotZT24Hour()
     hold off;
 end
 
-%% Normalize and Summarize Data
-function aggregatedData = aggregate_daily_means(data, normalizedActivityColumn)
-    aggregatedData = varfun(@mean, data, 'InputVariables', normalizedActivityColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
-    meanColumnName = ['mean_' normalizedActivityColumn];
+%% Summarize Data
+function aggregatedData = aggregate_daily_means(data, selectedPixelDifferenceColumn)
+    aggregatedData = varfun(@mean, data, 'InputVariables', selectedPixelDifferenceColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
+    meanColumnName = ['mean_' selectedPixelDifferenceColumn];
     if ismember(meanColumnName, aggregatedData.Properties.VariableNames)
         meanColumn = aggregatedData.(meanColumnName);
     else
         error('The column %s does not exist in aggregatedData.', meanColumnName);
     end
-    stdError = varfun(@std, data, 'InputVariables', normalizedActivityColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
-    stdErrorValues = stdError{:, ['std_' normalizedActivityColumn]} ./ sqrt(aggregatedData.GroupCount);
-    aggregatedData = addvars(aggregatedData, meanColumn, 'NewVariableNames', 'Mean_NormalizedActivity');
+    stdError = varfun(@std, data, 'InputVariables', selectedPixelDifferenceColumn, 'GroupingVariables', {'Condition', 'Animal', 'RelativeDay'});
+    stdErrorValues = stdError{:, ['std_' selectedPixelDifferenceColumn]} ./ sqrt(aggregatedData.GroupCount);
+    aggregatedData = addvars(aggregatedData, meanColumn, 'NewVariableNames', 'Mean_SelectedPixelDifference');
     aggregatedData = addvars(aggregatedData, stdErrorValues, 'NewVariableNames', 'StdError');
     aggregatedData.GroupCount = []; % Remove the GroupCount variable
 end

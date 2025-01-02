@@ -11,8 +11,8 @@ means = zeros(length(conditions), 1);
 stderr = zeros(length(conditions), 1);
 
 % Group data for each condition
-data300Lux = combinedData.NormalizedActivity(strcmp(combinedData.Condition, '300Lux'));
-data1000Lux = combinedData.NormalizedActivity(strcmp(combinedData.Condition, '1000Lux'));
+data300Lux = combinedData.SelectedPixelDifference(strcmp(combinedData.Condition, '300Lux'));
+data1000Lux = combinedData.SelectedPixelDifference(strcmp(combinedData.Condition, '1000Lux'));
 
 % Calculate means and standard errors
 means(1) = mean(data300Lux);

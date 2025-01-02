@@ -12,7 +12,7 @@ fprintf('Aggregating and averaging data by relative day, condition, and animal..
 allAnimalData = {};
 colors = {'b', 'r'}; % Colors for each condition
 
-% Compute mean normalized activity for each animal per day per condition
+% Compute mean selected pixel difference for each animal per day per condition
 for c = 1:length(conditions)
     condition = conditions{c};
     for day = day_range % Up to 40 days per condition
@@ -28,15 +28,15 @@ for c = 1:length(conditions)
                 continue; % Skip if there is no data for this animal, day, and condition
             end
             
-            meanNormalizedActivity = mean(animalDayData.NormalizedActivity);
+            meanSelectedPixelDifference = mean(animalDayData.SelectedPixelDifference);
             % Append to result arrays
-            allAnimalData = [allAnimalData; {condition, day, animal, meanNormalizedActivity}];
+            allAnimalData = [allAnimalData; {condition, day, animal, meanSelectedPixelDifference}];
         end
     end
 end
 
 % Convert to table for easier processing
-allAnimalDataTable = cell2table(allAnimalData, 'VariableNames', {'Condition', 'Day', 'Animal', 'MeanNormalizedActivity'});
+allAnimalDataTable = cell2table(allAnimalData, 'VariableNames', {'Condition', 'Day', 'Animal', 'MeanSelectedPixelDifference'});
 
 % Initialize arrays for plot data
 mean_activity = [];
@@ -64,7 +64,7 @@ for c = 1:length(conditions)
         end
         
         % Calculate the mean and standard error using the animal means
-        meanActivityPerAnimal = dayConditionData.MeanNormalizedActivity;
+        meanActivityPerAnimal = dayConditionData.MeanSelectedPixelDifference;
         overallMean = mean(meanActivityPerAnimal);
         overallStdError = std(meanActivityPerAnimal) / sqrt(length(meanActivityPerAnimal));
         
@@ -107,7 +107,7 @@ text(17.5, text_y_pos, '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 20
 text(52.5, text_y_pos, '1000Lux', 'HorizontalAlignment', 'center', 'FontSize', 20, 'FontWeight', 'bold');
 
 % Labels, title, and x-axis adjustment
-ylabel('Mean Normalized Activity', 'FontSize', 20, 'FontWeight', 'bold'); % Larger font size for the y-label
+ylabel('Mean Activity', 'FontSize', 20, 'FontWeight', 'bold'); % Larger font size for the y-label
 title('Activity Under Different Lighting Conditions', 'FontSize', 20, 'FontWeight', 'bold');
 xlim([0, length(mean_activity)+1]);
 
@@ -153,8 +153,8 @@ for a = 1:length(uniqueAnimals)
             end
             
             % Calculate the mean and standard error for the current day and condition
-            meanActivity = mean(dayConditionData.NormalizedActivity);
-            stdError = std(dayConditionData.NormalizedActivity) / sqrt(height(dayConditionData));
+            meanActivity = mean(dayConditionData.SelectedPixelDifference);
+            stdError = std(dayConditionData.SelectedPixelDifference) / sqrt(height(dayConditionData));
             
             % Store mean and error values
             condition_mean_activity = [condition_mean_activity; meanActivity];
@@ -199,7 +199,7 @@ for a = 1:length(uniqueAnimals)
         text(52.5, min(ylim)-0.05*range(ylim), '1000Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
 
         % Labels and title
-        ylabel('Mean Normalized Activity');
+        ylabel('Mean Activity');
         title(['Activity Under Different Lighting Conditions for Animal: ', animal]);
         xlim([0, length(mean_activity)+1]);
     end
