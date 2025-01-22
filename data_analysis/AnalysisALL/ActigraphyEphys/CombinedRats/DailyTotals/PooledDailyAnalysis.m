@@ -13,6 +13,8 @@ fprintf('Reading in table\n');
 
 % Reads in data from .csv
 combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysCohortData.csv');
+output_directory = '/Users/noahmuscat/Desktop';
+
 
 % Define conditions and their corresponding day ranges
 conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
@@ -107,18 +109,14 @@ for b = section_boundaries
     plot([b b], ylim, 'k--');
 end
 
-% Add custom x-axis labels below the graph for each condition
-text(3.5, min(ylim)-0.05*range(ylim), '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-text(10.5, min(ylim)-0.05*range(ylim), '1000Lux1', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-text(17.5, min(ylim)-0.05*range(ylim), '1000Lux4', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-text(24.5, min(ylim)-0.05*range(ylim), 'sleepDeprivation', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-
 % Labels and title
 ylabel('Normalized Activity', 'FontSize', 18, 'FontWeight', 'bold'); % Increased font size and bold
-title('Activity Throughout Different Lighting Conditions', 'FontSize', 20, 'FontWeight', 'bold'); % Increased font size and bold
+title('Activity Under Different Lighting Conditions', 'FontSize', 20, 'FontWeight', 'bold'); % Increased font size and bold
 xlim([0, length(mean_activity)+1]);
 
 % Improve visibility and aesthetics
 grid on;
 legend(h, validConditions, 'Location', 'Best', 'FontSize', 12); % Improved font size for the legend
 hold off;
+
+saveas(gcf, fullfile(output_directory, sprintf('Pooled--ActivityOverTime.png')));

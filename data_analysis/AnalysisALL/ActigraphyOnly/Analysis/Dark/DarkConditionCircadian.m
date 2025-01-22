@@ -10,7 +10,7 @@ femaleAnimalIDs = {'AO5', 'AO6', 'AO8'}; % IDs of the female animals
 conditions = {'FullDark', '300LuxEnd'}; % Conditions to analyze
 
 % Read the combined data table
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv');
 
 % Filter data for Dark/Dark and 300LuxEnd conditions and specific animals
 condition_data = combined_data(ismember(combined_data.Condition, conditions) & ismember(combined_data.Animal, animalIDs), :);

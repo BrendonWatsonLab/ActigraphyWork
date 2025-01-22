@@ -12,7 +12,7 @@
 %% Starting
 
 % Read the data from the CSV file
-combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
+combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv');
 
 % Display the column names to verify
 disp('Column names in the data:');

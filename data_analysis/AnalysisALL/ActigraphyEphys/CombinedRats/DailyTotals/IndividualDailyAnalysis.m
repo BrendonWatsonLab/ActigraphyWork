@@ -11,6 +11,7 @@ output_directory = '/Users/noahmuscat/Desktop';
 
 % Define conditions and their corresponding day ranges
 conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
+validConditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleepDeprivation'};
 day_ranges = {1:7, 1:7, 1:7, 1:3}; % Day ranges for each condition
 colors = {'b', 'r', 'k', 'g'}; % Colors for each condition
 
@@ -121,20 +122,14 @@ for a = 1:length(animals)
         plot([b b], ylim, 'k--');
     end
 
-    % Add custom x-axis labels below the graph for each condition
-    text(3.5, min(ylim)-0.05*range(ylim), '300Lux', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-    text(10.5, min(ylim)-0.05*range(ylim), '1000Lux1', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-    text(17.5, min(ylim)-0.05*range(ylim), '1000Lux4', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-    text(24.5, min(ylim)-0.05*range(ylim), 'sleep_deprivation', 'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
-
     % Labels and title
-    ylabel('Mean Normalized Activity', 'FontSize', 18, 'FontWeight', 'bold');
-    title(sprintf('Activity for Animal %s Under Different Lighting Conditions', animal), 'FontSize', 20, 'FontWeight', 'bold');
+    ylabel('Normalized Activity', 'FontSize', 18, 'FontWeight', 'bold');
+    title(sprintf('Activity Over Time - %s', animal), 'FontSize', 20, 'FontWeight', 'bold');
     xlim([0, length(mean_activity)+1]);
 
     % Improve visibility and aesthetics
     grid on;
-    legend(h, conditions, 'Location', 'Best', 'FontSize', 12);
+    legend(h, validConditions, 'Location', 'Best', 'FontSize', 12);
     hold off;
 
     % Save the figure
