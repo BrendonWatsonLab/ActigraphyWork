@@ -8,7 +8,7 @@
 % Using direct data from .csv (5 minute bins)
 
 % Load and read data from the CSV file
-combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyEphys/EphysCohortData.csv');
+combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysCohortData.csv');
 
 % List of experimental conditions for plotting
 conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
