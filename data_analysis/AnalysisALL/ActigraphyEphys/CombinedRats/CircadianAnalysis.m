@@ -12,7 +12,7 @@
 %% Reading in data
 % Read in data, already in ZT form 
 convertZT = false;
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysCohortData.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv');
 
 % List of conditions for analysis
 conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};

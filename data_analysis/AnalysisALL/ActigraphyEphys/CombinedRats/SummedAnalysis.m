@@ -8,34 +8,44 @@
 % Using direct data from .csv (5 minute bins)
 
 % Load and read data from the CSV file
-combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysCohortData.csv');
+combinedData = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv');
+
+% Ensure 'RelativeDay' is numeric
+if ~isnumeric(combinedData.RelativeDay)
+    combinedData.RelativeDay = str2double(string(combinedData.RelativeDay));
+end
+
+% Use floor to group by integer days based on 'RelativeDay'
+combinedData.RelativeDay = floor(combinedData.RelativeDay);
+
+% Convert 'RelativeDay' to categorical
+combinedData.RelativeDay = categorical(combinedData.RelativeDay);
 
 % List of experimental conditions for plotting
 conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
 
-% Initialize cell arrays to store data for each condition
+% Ensure the 'Condition' column is a categorical type
+combinedData.Condition = categorical(combinedData.Condition, conditions);
+
+% Initialize cell arrays to store pooled means for each condition
 condData = cell(length(conditions), 1);
 
 % Collect data for each condition
 for condIdx = 1:length(conditions)
     condition = conditions{condIdx};
-    % Filter data based on the current condition
-    filtData = combinedData(strcmp(combinedData.Condition, condition), :);
-    % Store the selected pixel difference values for the current condition
-    condData{condIdx} = filtData.SelectedPixelDifference;
+    % Filter data using the ismember function for categorical array
+    filtData = combinedData(combinedData.Condition == condition, :);
+    % Calculate daily means of 'NormalizedActivity' for each day
+    dailyMeans = varfun(@mean, filtData, 'InputVariables', 'NormalizedActivity', ...
+                        'GroupingVariables', 'RelativeDay');
+    % Store the daily mean values
+    condData{condIdx} = dailyMeans.mean_NormalizedActivity;
 end
 
 % Combine data from all conditions into a single array and create a grouping variable
 allData = vertcat(condData{:});
-group = {};
-
-for condIdx = 1:length(conditions)
-    % Repeat the condition name for the number of data points in that condition
-    group = [group; repmat(conditions(condIdx), length(condData{condIdx}), 1)];
-end
-
-% Convert the group cell array to a categorical vector for ANOVA
-group = categorical(group);
+group = arrayfun(@(i) repmat(conditions(i), size(condData{i})), 1:length(conditions), 'UniformOutput', false);
+group = categorical(vertcat(group{:}));
 
 % Perform one-way ANOVA analysis
 [p, tbl, stats] = anova1(allData, group, 'off');
@@ -47,31 +57,24 @@ fprintf('ANOVA p-value: %f\n', p);
 comparisons = multcompare(stats, 'CType', 'tukey-kramer', 'Display', 'off');
 
 % Calculate mean and standard error for each condition
-means = zeros(length(conditions), 1);
-stderr = zeros(length(conditions), 1);
-
-for condIdx = 1:length(conditions)
-    % Calculate the mean of the selected pixel difference values
-    means(condIdx) = mean(condData{condIdx});
-    % Calculate the standard error of the mean
-    stderr(condIdx) = std(condData{condIdx}) / sqrt(length(condData{condIdx}));
-end
+means = cellfun(@mean, condData);
+stderr = cellfun(@(x) std(x) / sqrt(length(x)), condData);
 
 % Create the bar plot for visualizing the data
 figure;
-bar(means);   % Plot the means as a bar chart
+b = bar(means, 'FaceColor', [0.7 0.7 0.7]); % Gray bars
 hold on;
 % Add error bars to the bar chart
 errorbar(1:length(conditions), means, stderr, 'k', 'LineStyle', 'none');
 % Customize the appearance of the plot
 set(gca, 'XTick', 1:length(conditions), ...
-          'XTickLabel', conditions, ...
-          'FontSize', 14, ...
-          'FontWeight', 'bold'); % Increase font size and bold
-ylabel('SelectedPixelDifference', ...
+         'XTickLabel', conditions, ...
+         'FontSize', 14, ...
+         'FontWeight', 'bold'); % Increase font size and bold
+ylabel('Normalized Activity', ...
        'FontSize', 18, ...
        'FontWeight', 'bold'); % Increase font size and bold
-title('Comparison of Activity Across Lighting Conditions', ...
+title('Comparison of Normalized Activity Across Lighting Conditions', ...
       'FontSize', 20, ...
       'FontWeight', 'bold'); % Increase font size and bold
 
@@ -82,8 +85,7 @@ sigThreshold = 0.05; % Define the significance threshold
 
 for i = 1:size(comparisons, 1)
     if comparisons(i, 6) < sigThreshold % Only consider significant comparisons
-        groupIndices = comparisons(i, 1:2);
-        significanceGroups{end + 1} = groupIndices; 
+        significanceGroups{end + 1} = comparisons(i, 1:2); 
         significancePValues(end + 1) = comparisons(i, 6); 
     end
 end
@@ -107,10 +109,7 @@ else
 end
 hold off;
 
-% Save the figure if necessary
-% saveas(gcf, fullfile(saveDir, 'Activity_Comparison_BarPlot_with_Significance.png'));
-
-disp('Bar plot with ANOVA significance markers generated and saved.');
+disp('Bar plot with ANOVA significance markers generated.');
 
 % Output Tukey's HSD test p-values for each comparison
 fprintf('\nTukey''s HSD test comparisons:\n');
