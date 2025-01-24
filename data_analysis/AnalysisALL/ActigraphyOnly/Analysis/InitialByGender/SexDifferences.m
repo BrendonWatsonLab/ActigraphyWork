@@ -10,7 +10,7 @@ genders = {'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female
 conditions = {'300Lux', '1000LuxStart', '1000LuxEnd'};
 
 % Read the combined data table
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv');
 
 %% Assign each data point a gender
 combined_data.Gender = cell(height(combined_data), 1); % Initialize Gender column

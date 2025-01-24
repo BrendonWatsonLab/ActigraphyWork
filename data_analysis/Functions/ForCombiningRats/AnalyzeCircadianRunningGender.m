@@ -1,4 +1,4 @@
-function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
+function AnalyzeCircadianRunningGender(datafile, convert_ZT, name, save_directory)
     if ~istable(datafile)
         % Load and process data
         datafile = readtable(datafile);
@@ -17,7 +17,7 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
         gender = genderList{genderIdx};
         genderData = datafile(strcmp(datafile.Gender, gender), :);
 
-        % Calculate hourly means across the week
+        % Calculate hourly means across the week using NormalizedActivity
         [hourlyMeans, hourlyBinTimes] = CalculateHourlyMeans(genderData);
 
         % Extract ZT time from the hourly bins
@@ -43,11 +43,9 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
         disp(['ANOVA p-value (ZT 22-2 vs ZT 10-14 vs Rest) for ', gender, ': ', num2str(p_anova)]);
 
         % Calculate means and SEMs for Lights On and Lights Off comparison
-        lights_on_range = ismember(ZT_Time, 0:9); % ZT 0 to ZT 9
-        lights_off_range = ismember(ZT_Time, 15:23); % ZT 15 to ZT 24
-        excl_range = ismember(ZT_Time, 10:14); % Excluded range
-        lights_on_range = lights_on_range & ~excl_range;
-        lights_off_range = lights_off_range & ~excl_range;
+        lights_on_range = ismember(ZT_Time, 3:9); % ZT 3 to ZT 9
+        disp(lights_on_range)
+        lights_off_range = ismember(ZT_Time, 15:21); % ZT 15 to ZT 21
 
         meanLightsOn = mean(hourlyMeans(lights_on_range));
         meanLightsOff = mean(hourlyMeans(lights_off_range));
@@ -56,7 +54,7 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
 
         % Perform two-sample t-tests for Lights On and Lights Off comparison
         [h2, p2] = ttest2(hourlyMeans(lights_on_range), hourlyMeans(lights_off_range));
-        disp(['Two-sample t-test p-value (Lights On [ZT 0-9] vs Lights Off [ZT 15-23]) for ', gender, ': ', num2str(p2)]);
+        disp(['Two-sample t-test p-value (Lights On [ZT 3-9] vs Lights Off [ZT 15-21]) for ', gender, ': ', num2str(p2)]);
 
         % Segment the hourly means into another two groups: ZT 0-11 vs ZT 12-23
         range_ZT_0_11 = ismember(ZT_Time, 0:11); % ZT 0 to ZT 11
@@ -66,6 +64,7 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
         mean_ZT_0_11 = mean(hourlyMeans(range_ZT_0_11));
         mean_ZT_12_23 = mean(hourlyMeans(range_ZT_12_23));
         sem_ZT_0_11 = std(hourlyMeans(range_ZT_0_11)) / sqrt(sum(range_ZT_0_11));
+        disp(sum(range_ZT_0_11))
         sem_ZT_12_23 = std(hourlyMeans(range_ZT_12_23)) / sqrt(sum(range_ZT_12_23));
 
         % Perform two-sample t-test for ZT 0-11 vs ZT 12-23
@@ -101,26 +100,25 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
     subplot(2, 3, 1);
     hold on;
     b1 = bar([1, 2, 3], [results.Male.mean_ZT_22_2, results.Male.mean_ZT_10_14, results.Male.mean_rest], 'FaceColor', 'flat');
-    b1.CData(1,:) = [0.2, 0.2, 0.5]; % Color for ZT 22-2
-    b1.CData(2,:) = [0.5, 0.2, 0.2]; % Color for ZT 10-14
-    b1.CData(3,:) = [0.2, 0.5, 0.2]; % Color for Rest
+    b1.CData(1,:) = [0.2, 0.2, 0.5];
+    b1.CData(2,:) = [0.5, 0.2, 0.2];
+    b1.CData(3,:) = [0.2, 0.5, 0.2];
     errorbar([1, 2, 3], [results.Male.mean_ZT_22_2, results.Male.mean_ZT_10_14, results.Male.mean_rest], ...
              [results.Male.sem_ZT_22_2, results.Male.sem_ZT_10_14, results.Male.sem_rest], ...
              'k', 'LineWidth', 1.5, 'LineStyle', 'none');
-    ylabel('Mean of SelectedPixelDifference', 'FontSize', 16); % Larger font size for y-axis label
+    ylabel('NormalizedActivity', 'FontSize', 16); % Updated y-axis label
     xticks([1, 2, 3]);
     xticklabels({'22-2', '10-14', 'Rest of Day'});
-    set(gca, 'FontSize', 14); % Increase the font size for x-ticks
-    title('Peak Times (Male)', 'FontSize', 16); % Larger font size for title
+    set(gca, 'FontSize', 14);
+    title('Peak Times (Male)', 'FontSize', 16);
 
-    % Add asterisks for statistical significance if p < 0.05
     y_max = max([results.Male.mean_ZT_22_2 + results.Male.sem_ZT_22_2, results.Male.mean_ZT_10_14 + results.Male.sem_ZT_10_14, results.Male.mean_rest + results.Male.sem_rest]) * 1.1;
     if results.Male.p_anova < 0.05
         plot([1, 2, 3], [y_max, y_max, y_max], '-k', 'LineWidth', 1.5);
-        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Left notch
-        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Middle notch
-        plot([3 3], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Right notch
-        text(2, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center'); % Larger font size for asterisk
+        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        plot([3 3], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        text(2, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
     end
     ylim([0, y_max * 1.3]);
     hold off;
@@ -128,23 +126,22 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
     subplot(2, 3, 2);
     hold on;
     b1 = bar([1, 2], [results.Male.meanLightsOn, results.Male.meanLightsOff], 'FaceColor', 'flat');
-    b1.CData(1,:) = [0.2, 0.2, 0.5]; % Color for Lights On
-    b1.CData(2,:) = [0.5, 0.2, 0.2]; % Color for Lights Off
+    b1.CData(1,:) = [0.2, 0.2, 0.5];
+    b1.CData(2,:) = [0.5, 0.2, 0.2];
     errorbar([1, 2], [results.Male.meanLightsOn, results.Male.meanLightsOff], ...
              [results.Male.semLightsOn, results.Male.semLightsOff], 'k', 'LineWidth', 1.5, 'LineStyle', 'none');
-    ylabel('Mean of SelectedPixelDifference', 'FontSize', 16); % Larger font size for y-axis label
+    ylabel('NormalizedActivity', 'FontSize', 16); % Updated y-axis label
     xticks([1, 2]);
     xticklabels({'Lights On', 'Lights Off'});
-    set(gca, 'FontSize', 14); % Increase the font size for x-ticks
-    title('Diurnality Test (Male)', 'FontSize', 16); % Larger font size for title
+    set(gca, 'FontSize', 14);
+    title('Diurnality Test (Male) - Excluding Transition', 'FontSize', 16);
 
-    % Add asterisks for statistical significance if p < 0.05
     y_max = max([results.Male.meanLightsOn + results.Male.semLightsOn, results.Male.meanLightsOff + results.Male.semLightsOff]) * 1.1;
     if results.Male.p2 < 0.05
         plot([1, 2], [y_max, y_max], '-k', 'LineWidth', 1.5);
-        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Left notch
-        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Right notch
-        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center'); % Larger font size for asterisk
+        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
     end
     ylim([0, y_max * 1.3]);
     hold off;
@@ -152,23 +149,22 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
     subplot(2, 3, 3);
     hold on;
     b1 = bar([1, 2], [results.Male.mean_ZT_0_11, results.Male.mean_ZT_12_23], 'FaceColor', 'flat');
-    b1.CData(1,:) = [0.2, 0.2, 0.5]; % Color for ZT 0-11
-    b1.CData(2,:) = [0.5, 0.2, 0.2]; % Color for ZT 12-23
+    b1.CData(1,:) = [0.2, 0.2, 0.5];
+    b1.CData(2,:) = [0.5, 0.2, 0.2];
     errorbar([1, 2], [results.Male.mean_ZT_0_11, results.Male.mean_ZT_12_23], ...
              [results.Male.sem_ZT_0_11, results.Male.sem_ZT_12_23], 'k', 'LineWidth', 1.5, 'LineStyle', 'none');
-    ylabel('Mean of SelectedPixelDifference', 'FontSize', 16); % Larger font size for y-axis label
+    ylabel('NormalizedActivity', 'FontSize', 16); % Updated y-axis label
     xticks([1, 2]);
     xticklabels({'0-11', '12-23'});
-    set(gca, 'FontSize', 14); % Increase the font size for x-ticks
-    title('Lights On vs Lights Off (Male)', 'FontSize', 16); % Larger font size for title
+    set(gca, 'FontSize', 14);
+    title('Lights On vs Lights Off (Male)', 'FontSize', 16);
 
-    % Add asterisks for statistical significance if p < 0.05
     y_max = max([results.Male.mean_ZT_0_11 + results.Male.sem_ZT_0_11, results.Male.mean_ZT_12_23 + results.Male.sem_ZT_12_23]) * 1.1;
     if results.Male.p3 < 0.05
         plot([1, 2], [y_max, y_max], '-k', 'LineWidth', 1.5);
-        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Left notch
-        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Right notch
-        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center'); % Larger font size for asterisk
+        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
     end
     ylim([0, y_max * 1.3]);
     hold off;
@@ -176,26 +172,25 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
     subplot(2, 3, 4);
     hold on;
     b1 = bar([1, 2, 3], [results.Female.mean_ZT_22_2, results.Female.mean_ZT_10_14, results.Female.mean_rest], 'FaceColor', 'flat');
-    b1.CData(1,:) = [0.8, 0.2, 0.5]; % Color for ZT 22-2
-    b1.CData(2,:) = [0.2, 0.8, 0.5]; % Color for ZT 10-14
-    b1.CData(3,:) = [0.5, 0.2, 0.8]; % Color for Rest
+    b1.CData(1,:) = [0.8, 0.2, 0.5];
+    b1.CData(2,:) = [0.2, 0.8, 0.5];
+    b1.CData(3,:) = [0.5, 0.2, 0.8];
     errorbar([1, 2, 3], [results.Female.mean_ZT_22_2, results.Female.mean_ZT_10_14, results.Female.mean_rest], ...
              [results.Female.sem_ZT_22_2, results.Female.sem_ZT_10_14, results.Female.sem_rest], ...
              'k', 'LineWidth', 1.5, 'LineStyle', 'none');
-    ylabel('Mean of SelectedPixelDifference', 'FontSize', 16); % Larger font size for y-axis label
+    ylabel('NormalizedActivity', 'FontSize', 16); % Updated y-axis label
     xticks([1, 2, 3]);
     xticklabels({'22-2', '10-14', 'Rest of Day'});
-    set(gca, 'FontSize', 14); % Increase the font size for x-ticks
-    title('Peak Times (Female)', 'FontSize', 16); % Larger font size for title
+    set(gca, 'FontSize', 14);
+    title('Peak Times (Female)', 'FontSize', 16);
 
-    % Add asterisks for statistical significance if p < 0.05
     y_max = max([results.Female.mean_ZT_22_2 + results.Female.sem_ZT_22_2, results.Female.mean_ZT_10_14 + results.Female.sem_ZT_10_14, results.Female.mean_rest + results.Female.sem_rest]) * 1.1;
     if results.Female.p_anova < 0.05
         plot([1, 2, 3], [y_max, y_max, y_max], '-k', 'LineWidth', 1.5);
-        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Left notch
-        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Middle notch
-        plot([3 3], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Right notch
-        text(2, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center'); % Larger font size for asterisk
+        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        plot([3 3], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        text(2, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
     end
     ylim([0, y_max * 1.3]);
     hold off;
@@ -203,23 +198,22 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
     subplot(2, 3, 5);
     hold on;
     b1 = bar([1, 2], [results.Female.meanLightsOn, results.Female.meanLightsOff], 'FaceColor', 'flat');
-    b1.CData(1,:) = [0.8, 0.2, 0.5]; % Color for Lights On
-    b1.CData(2,:) = [0.2, 0.8, 0.5]; % Color for Lights Off
+    b1.CData(1,:) = [0.8, 0.2, 0.5];
+    b1.CData(2,:) = [0.2, 0.8, 0.5];
     errorbar([1, 2], [results.Female.meanLightsOn, results.Female.meanLightsOff], ...
              [results.Female.semLightsOn, results.Female.semLightsOff], 'k', 'LineWidth', 1.5, 'LineStyle', 'none');
-    ylabel('Mean of SelectedPixelDifference', 'FontSize', 16); % Larger font size for y-axis label
+    ylabel('NormalizedActivity', 'FontSize', 16); % Updated y-axis label
     xticks([1, 2]);
     xticklabels({'Lights On', 'Lights Off'});
-    set(gca, 'FontSize', 14); % Increase the font size for x-ticks
-    title('Diurnality Test (Female)', 'FontSize', 16); % Larger font size for title
+    set(gca, 'FontSize', 14);
+    title('Diurnality Test (Female)', 'FontSize', 16);
 
-    % Add asterisks for statistical significance if p < 0.05
     y_max = max([results.Female.meanLightsOn + results.Female.semLightsOn, results.Female.meanLightsOff + results.Female.semLightsOff]) * 1.1;
     if results.Female.p2 < 0.05
         plot([1, 2], [y_max, y_max], '-k', 'LineWidth', 1.5);
-        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Left notch
-        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Right notch
-        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center'); % Larger font size for asterisk
+        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
     end
     ylim([0, y_max * 1.3]);
     hold off;
@@ -227,27 +221,28 @@ function AnalyzeCircadianRunningGender(datafile, convert_ZT, name)
     subplot(2, 3, 6);
     hold on;
     b1 = bar([1, 2], [results.Female.mean_ZT_0_11, results.Female.mean_ZT_12_23], 'FaceColor', 'flat');
-    b1.CData(1,:) = [0.8, 0.2, 0.5]; % Color for ZT 0-11
-    b1.CData(2,:) = [0.2, 0.8, 0.5]; % Color for ZT 12-23
+    b1.CData(1,:) = [0.8, 0.2, 0.5];
+    b1.CData(2,:) = [0.2, 0.8, 0.5];
     errorbar([1, 2], [results.Female.mean_ZT_0_11, results.Female.mean_ZT_12_23], ...
              [results.Female.sem_ZT_0_11, results.Female.sem_ZT_12_23], 'k', 'LineWidth', 1.5, 'LineStyle', 'none');
-    ylabel('Mean of SelectedPixelDifference', 'FontSize', 16); % Larger font size for y-axis label
+    ylabel('NormalizedActivity', 'FontSize', 16); % Updated y-axis label
     xticks([1, 2]);
     xticklabels({'0-11', '12-23'});
-    set(gca, 'FontSize', 14); % Increase the font size for x-ticks
-    title('Lights On vs Lights Off (Female)', 'FontSize', 16); % Larger font size for title
+    set(gca, 'FontSize', 14);
+    title('Lights On vs Lights Off (Female)', 'FontSize', 16);
 
-    % Add asterisks for statistical significance if p < 0.05
     y_max = max([results.Female.mean_ZT_0_11 + results.Female.sem_ZT_0_11, results.Female.mean_ZT_12_23 + results.Female.sem_ZT_12_23]) * 1.1;
     if results.Female.p3 < 0.05
         plot([1, 2], [y_max, y_max], '-k', 'LineWidth', 1.5);
-        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Left notch
-        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5); % Right notch
-        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center'); % Larger font size for asterisk
+        plot([1 1], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        plot([2 2], [y_max * 0.95, y_max], '-k', 'LineWidth', 1.5);
+        text(1.5, y_max * 1.05, '*', 'FontSize', 20, 'HorizontalAlignment', 'center');
     end
     ylim([0, y_max * 1.3]);
     hold off;
-    % Add overall title for the figure
-    sgtitle(['Circadian Running Analysis: ', name], 'FontSize', 20); % Larger font size for super title
-end
+   
+    sgtitle(['Circadian Running Analysis: ', name], 'FontSize', 20);
 
+    save_filename = sprintf('CircadianAnalysis.png'); % Construct the filename
+    saveas(gcf, fullfile(save_directory, save_filename)); % Save the figure
+end

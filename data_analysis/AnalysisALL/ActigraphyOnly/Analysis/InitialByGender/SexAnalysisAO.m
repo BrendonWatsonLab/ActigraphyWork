@@ -20,7 +20,7 @@ genders = {'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female
 conditions = {'300Lux', '1000LuxStart', '1000LuxEnd'}; % Conditions to analyze
 
 % Read the combined data table
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv');
 
 % Display the column names to verify
 disp('Column names in the data:');
