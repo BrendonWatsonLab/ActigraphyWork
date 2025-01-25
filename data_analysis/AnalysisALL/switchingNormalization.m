@@ -83,7 +83,7 @@ for i = 1:length(animals)
         continue;
     end
     
-    % Get data for the last 7 unique days
+    % Get data for the last 7 unique days per animal
     last7Dates = uniqueDates(end-6:end);
     last7DaysData = selectedData(ismember(dateshift(selectedData.DateZT, 'start', 'day'), last7Dates), :);
     
