@@ -12,7 +12,7 @@
 fprintf('Reading in table\n');
 
 % Reads in data from .csv
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysCohortData.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv');
 output_directory = '/Users/noahmuscat/Desktop';
 
 

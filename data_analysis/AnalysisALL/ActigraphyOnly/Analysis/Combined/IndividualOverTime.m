@@ -113,8 +113,8 @@ function plot_individual_animal(animal, data, save_directory, desiredOrder, colo
                  [meanActivity - stdError; flipud(meanActivity + stdError)], ...
                  color, 'FaceAlpha', 0.2, 'EdgeColor', 'none');
 
-            x_tick_labels = [x_tick_labels, 1:3:max_day];
-            x_tick_positions = [x_tick_positions, plot_offset + (1:3:max_day)];
+            x_tick_labels = [x_tick_labels, 1:1:max_day];
+            x_tick_positions = [x_tick_positions, plot_offset + (1:1:max_day)];
 
             plot_offset = plot_offset + max_day;
             label_positions = [label_positions, plot_offset];

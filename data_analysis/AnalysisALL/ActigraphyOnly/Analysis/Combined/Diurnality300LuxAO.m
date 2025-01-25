@@ -5,6 +5,8 @@ save_directory = '/Users/noahmuscat/Desktop';
 % Filter only data for '300Lux' condition
 combined_data = combined_data(strcmp(combined_data.Condition, '300Lux'), :);
 
+animalIDs = {'AO1', 'AO2'}
+
 % Assign each data point a gender
 combined_data.Gender = cell(height(combined_data), 1); % Initialize Gender column
 for i = 1:length(animalIDs)

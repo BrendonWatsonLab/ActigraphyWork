@@ -85,16 +85,16 @@ function plot_data_and_save(groupName, analyzedTable, conditions, colors, max_da
              [meanActivity - stdError; flipud(meanActivity + stdError)], ...
              color, 'FaceAlpha', 0.2, 'EdgeColor', 'none');
         
-        % Update x_tick_labels and x_tick_positions to label every 3 days
-        x_tick_labels = [x_tick_labels, 1:3:max_day];
-        x_tick_positions = [x_tick_positions, plot_offset + (1:3:max_day)];
+        % Update x_tick_labels and x_tick_positions to label every day
+        x_tick_labels = [x_tick_labels, 1:1:max_day];
+        x_tick_positions = [x_tick_positions, plot_offset + (1:1:max_day)];
         
         plot_offset = plot_offset + max_day;
         label_positions = [label_positions, plot_offset];
     end
     
-    set(gca, 'XTick', x_tick_positions);  % Set every 3 days as an x-tick
-    set(gca, 'XTickLabel', x_tick_labels);  % Show labels for every 3rd day
+    set(gca, 'XTick', x_tick_positions);  
+    set(gca, 'XTickLabel', x_tick_labels);  
     
     for i = 1:length(label_positions)
         xline(label_positions(i), '--k', 'LineWidth', 1.5);

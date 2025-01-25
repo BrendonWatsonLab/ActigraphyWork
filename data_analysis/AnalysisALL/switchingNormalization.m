@@ -1,91 +1,100 @@
-%% Redoing normalization
-% this script is used to redo normalization of the animal activity
+% Helper function to compute Z-score
+function z_scores = compute_z_scores(data, mean_value, std_value)
+    z_scores = (data - mean_value) / std_value;
+end
 
-%% For actigraphyEphys
-% normalizing to the last 4 days of the 300Lux condition
-
+%% For ActigraphyEphys
 % Read the CSV file as a table
-data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv', 'PreserveVariableNames', true);
+dataEphys = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv', 'PreserveVariableNames', true);
+
+% Convert DateZT to a datetime format
+dataEphys.DateZT = datetime(dataEphys.DateZT, 'InputFormat', 'MM/dd/yy HH:mm');
 
 % Extract unique animals
-animals = unique(data.Animal);
+animals = unique(dataEphys.Animal);
 
-% Loop over each animal to calculate the baseline and update NormalizedActivity
+% Loop over each animal to calculate the baseline using the last 4 unique days
 for i = 1:length(animals)
     % Select current animal
     currAnimal = animals{i};
     
-    % Find rows corresponding to the current animal and 300Lux condition
-    isCurrentAnimal = strcmp(data.Animal, currAnimal);
-    is300LuxCondition = strcmp(data.Condition, '300Lux');
-    
-    % Combine conditions
+    % Filter data for the current animal and 300Lux condition
+    isCurrentAnimal = strcmp(dataEphys.Animal, currAnimal);
+    is300LuxCondition = strcmp(dataEphys.Condition, '300Lux');
     currentEntries = isCurrentAnimal & is300LuxCondition;
     
-    % Select data for these entries
-    selectedData = data(currentEntries, :);
+    % Select data for these entries and sort by DateZT
+    selectedData = dataEphys(currentEntries, :);
     
-    % Sort by RelativeDay to make sure we have the last 4 days
-    selectedData = sortrows(selectedData, 'RelativeDay', 'descend');
+    % Extract unique dates
+    uniqueDates = unique(dateshift(selectedData.DateZT, 'start', 'day'), 'sorted');
     
-    % Select the last 4 days
-    last4DaysData = selectedData(1:4, :);
+    % Check if there are at least 4 unique dates
+    if length(uniqueDates) < 4
+        warning('Insufficient unique days for animal %s in 300Lux condition. Skipping normalization.', currAnimal);
+        continue;
+    end
     
-    % Calculate baseline
-    baseline = mean(last4DaysData.SelectedPixelDifference);
+    % Get data for the last 4 unique days
+    last4Dates = uniqueDates(end-3:end);
+    last4DaysData = selectedData(ismember(dateshift(selectedData.DateZT, 'start', 'day'), last4Dates), :);
     
-    % Calculate NormalizedActivity as SelectedPixelDifference / baseline
-    isCurrentAnimalAllCond = strcmp(data.Animal, currAnimal);
-    data.NormalizedActivity(isCurrentAnimalAllCond) = data.SelectedPixelDifference(isCurrentAnimalAllCond) / baseline;
+    % Calculate mean and standard deviation
+    meanValue = mean(last4DaysData.SelectedPixelDifference);
+    stdValue = std(last4DaysData.SelectedPixelDifference);
+    
+    % Apply Z-scoring normalization
+    allCondIdx = isCurrentAnimal;
+    dataEphys.NormalizedActivity(allCondIdx) = compute_z_scores(dataEphys.SelectedPixelDifference(allCondIdx), meanValue, stdValue);
 end
 
 % Save the modified table to a new CSV file
-writetable(data, '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv');
+writetable(dataEphys, '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv');
 
-%% For actigraphyOnly
-% normalizing to the last week of the 300Lux condition
-
+%% For ActigraphyOnly
 % Read the CSV file as a table
-data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv', 'PreserveVariableNames', true);
+dataAO = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv', 'PreserveVariableNames', true);
+
+% Convert DateZT to a datetime format
+dataAO.DateZT = datetime(dataAO.DateZT, 'InputFormat', 'MM/dd/yy HH:mm');
 
 % Extract unique animals
-animals = unique(data.Animal);
+animals = unique(dataAO.Animal);
 
-% Loop over each animal to calculate the baseline and update NormalizedActivity
+% Loop over each animal to calculate the baseline using the last 7 unique days
 for i = 1:length(animals)
     % Select current animal
     currAnimal = animals{i};
     
-    % Find rows corresponding to the current animal and 300Lux condition
-    isCurrentAnimal = strcmp(data.Animal, currAnimal);
-    is300LuxCondition = strcmp(data.Condition, '300Lux');
-    
-    % Combine conditions
+    % Filter data for the current animal and 300Lux condition
+    isCurrentAnimal = strcmp(dataAO.Animal, currAnimal);
+    is300LuxCondition = strcmp(dataAO.Condition, '300Lux');
     currentEntries = isCurrentAnimal & is300LuxCondition;
     
-    % Select data for these entries and sort by RelativeDay
-    selectedData = data(currentEntries, :);
-    selectedData = sortrows(selectedData, 'RelativeDay', 'descend');
+    % Select data for these entries and sort by DateZT
+    selectedData = dataAO(currentEntries, :);
     
-    % Verify there are enough days to calculate the baseline
-    if height(selectedData) < 7
-        warning('Insufficient data for animal %s in 300Lux condition to compute baseline. Skipping normalization.', currAnimal);
+    % Extract unique dates
+    uniqueDates = unique(dateshift(selectedData.DateZT, 'start', 'day'), 'sorted');
+    
+    % Check if there are at least 7 unique dates
+    if length(uniqueDates) < 7
+        warning('Insufficient unique days for animal %s in 300Lux condition. Skipping normalization.', currAnimal);
         continue;
     end
     
-    % Calculate baseline from the last 7 days
-    last7DaysData = selectedData(1:7, :);
-    baseline = mean(last7DaysData.SelectedPixelDifference);
+    % Get data for the last 7 unique days
+    last7Dates = uniqueDates(end-6:end);
+    last7DaysData = selectedData(ismember(dateshift(selectedData.DateZT, 'start', 'day'), last7Dates), :);
     
-    if baseline == 0
-        warning('Baseline for animal %s is zero. Skipping normalization to avoid division by zero.', currAnimal);
-        continue;
-    end
+    % Calculate mean and standard deviation
+    meanValue = mean(last7DaysData.SelectedPixelDifference);
+    stdValue = std(last7DaysData.SelectedPixelDifference);
     
-    % Normalize activity for the animal across all conditions
-    isCurrentAnimalAllCond = strcmp(data.Animal, currAnimal);
-    data.NormalizedActivity(isCurrentAnimalAllCond) = data.SelectedPixelDifference(isCurrentAnimalAllCond) / baseline;
+    % Apply Z-scoring normalization
+    allCondIdx = isCurrentAnimal;
+    dataAO.NormalizedActivity(allCondIdx) = compute_z_scores(dataAO.SelectedPixelDifference(allCondIdx), meanValue, stdValue);
 end
 
 % Save the modified table to a new CSV file
-writetable(data, '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv');
+writetable(dataAO, '/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv');
