@@ -1,137 +1,106 @@
-%% Overview
-% This script analyzes normalized activity data for each animal, calculates the mean and standard error
-% for each condition and day, and generates separate plots for each animal.
+% Load data
+data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv');
+save_directory = '/Users/noahmuscat/Desktop';
 
-% Reading in table
-fprintf('Reading in table\n');
+% Ensure 'RelativeDay' is numeric and integer
+if ~isnumeric(data.RelativeDay)
+    data.RelativeDay = str2double(string(data.RelativeDay));
+end
+data.RelativeDay = floor(data.RelativeDay);
 
-% Reads in data from .csv
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv');
-output_directory = '/Users/noahmuscat/Desktop';
-
-% Define conditions and their corresponding day ranges
+% Define conditions for Ephys animals
 conditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
 validConditions = {'300Lux', '1000Lux1', '1000Lux4', 'sleepDeprivation'};
-day_ranges = {1:7, 1:7, 1:7, 1:3}; % Day ranges for each condition
-colors = {'b', 'r', 'k', 'g'}; % Colors for each condition
 
-% Get a list of unique animals from the data
-animals = unique(combined_data.Animal);
 
-for a = 1:length(animals)
-    animal = animals{a};
-    
-    fprintf('Processing animal: %s\n', animal);
-    
-    % Filter data for the current animal
-    animal_data = combined_data(strcmp(combined_data.Animal, animal), :);
+% Function to aggregate data by day and by animal
+function individualData = aggregate_data_by_day_and_animal(data, conditions)
+    individualData = containers.Map;
 
-    % Initialize storage for aggregated data
-    allData = {}; 
-    mean_activity = [];
-    std_error = [];
-    x_ticks = {};
-    x_tick_labels = {};
-    h = []; % Array to store plot handles for legend
-
-    % Aggregate and average the data by relative day and condition
     for c = 1:length(conditions)
         condition = conditions{c};
-        day_range = day_ranges{c};
+        condData = data(strcmp(data.Condition, condition), :);
         
-        for day = day_range
-            % Filter data for the current condition, day, and animal
-            dayData = animal_data(strcmp(animal_data.Condition, condition) & ...
-                                  animal_data.RelativeDay >= day & ...
-                                  animal_data.RelativeDay < day+1, :);
-            
-            if isempty(dayData)
-                continue; % Skip if there is no data for this day and condition
+        uniqueAnimals = unique(condData.Animal);
+
+        for i = 1:length(uniqueAnimals)
+            animal = uniqueAnimals{i};
+            animalData = condData(strcmp(condData.Animal, animal), :);
+            uniqueDays = unique(animalData.RelativeDay);
+
+            for day = uniqueDays'
+                dailyData = animalData(animalData.RelativeDay == day, :);
+
+                animalMean = mean(dailyData.NormalizedActivity);
+
+                if isKey(individualData, animal)
+                    individualData(animal) = [individualData(animal); {condition, day, animalMean}];
+                else
+                    individualData(animal) = {condition, day, animalMean};
+                end
             end
-            
-            % Calculate mean and standard error of NormalizedActivity
-            meanNormalizedActivity = mean(dayData.NormalizedActivity);
-            stdError = std(dayData.NormalizedActivity) / sqrt(height(dayData));
-            
-            % Append results to the data array
-            allData = [allData; {condition, day, meanNormalizedActivity, stdError}];
         end
     end
+end
 
-    if isempty(allData)
-        fprintf('No data available for animal: %s\n', animal);
-        continue; % Skip plotting if there is no data for this animal
-    end
+% Perform aggregation for individual Ephys animals
+individualData = aggregate_data_by_day_and_animal(data, conditions);
 
-    % Convert to table for easier manipulation and plotting
-    allDataTable = cell2table(allData, 'VariableNames', {'Condition', 'Day', 'MeanNormalizedActivity', 'StdError'});
-    
+% Function to plot data for each animal
+function plot_individual_data(animalName, animalData, conditions, colors, save_directory, validConditions)
     figure;
     hold on;
+    
+    plot_offset = 0;
+    legend_handles = [];
 
     for c = 1:length(conditions)
         condition = conditions{c};
         color = colors{c};
-        condition_mean_activity = [];
-        condition_std_error = [];
-        day_range = day_ranges{c};
-
-        for d = day_range
-            % Filter the table for the current condition and day
-            idx = strcmp(allDataTable.Condition, condition) & allDataTable.Day == d;
-            if sum(idx) == 0
-                continue; % Skip if the day is missing in this condition for the animal
-            end
-            condition_mean_activity = [condition_mean_activity; allDataTable.MeanNormalizedActivity(idx)];
-            condition_std_error = [condition_std_error; allDataTable.StdError(idx)];
-            x_ticks = [x_ticks; sprintf('%s Day %d', condition, d)];
-            
-            % Short x-tick label for plotting (Just the days)
-            x_tick_labels = [x_tick_labels; num2str(d)];
-        end
-
-        if isempty(condition_mean_activity)
-            continue; % Skip if there is no data for the entire condition
+        
+        % Extract relevant data for this condition
+        conditionMask = strcmp(animalData(:, 1), condition);
+        conditionDays = cell2mat(animalData(conditionMask, 2));
+        conditionMeans = cell2mat(animalData(conditionMask, 3));
+        
+        if isempty(conditionDays)
+            continue;
         end
         
-        % Create the x-axis values specific to each condition
-        x_values = (c-1)*7 + (1:length(condition_mean_activity)); % Multiplied by 7 for gaps between conditions
-        if strcmp(condition, 'sleep_deprivation')
-            x_values = (3*7) + (1:length(condition_mean_activity)); % Adjust x_values for 'sleep_deprivation'
-        end
-
-        % Plot mean activity with error bars for each condition
-        h(end+1) = errorbar(x_values, condition_mean_activity, condition_std_error, 'o-', ...
-                            'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', color, 'Color', color);
+        x_values = plot_offset + conditionDays;
         
-        % Append results to overall arrays
-        mean_activity = [mean_activity; condition_mean_activity];
-        std_error = [std_error; condition_std_error];
+        % Plot the data for this animal
+        h = plot(x_values, conditionMeans, 'o-', 'LineWidth', 1.5, 'MarkerSize', 6, ...
+                 'MarkerFaceColor', color, 'Color', color);
+        legend_handles = [legend_handles, h];
+        
+        plot_offset = plot_offset + max(conditionDays);
+        
+        % Draw separation line for conditions
+        xline(plot_offset + 0.5, '--k', 'LineWidth', 1.5);
     end
-
-    hold off;
-
-    % Set the sectioned x-axis
-    set(gca, 'XTick', 1:length(mean_activity));
-    set(gca, 'XTickLabel', x_tick_labels);
-
-    % Adding section dividers and labels below the graph
-    hold on;
-    section_boundaries = [7.5, 14.5, 21.5]; % Section boundaries for separating conditions
-    for b = section_boundaries
-        plot([b b], ylim, 'k--');
-    end
-
-    % Labels and title
-    ylabel('Normalized Activity', 'FontSize', 18, 'FontWeight', 'bold');
-    title(sprintf('Activity Over Time - %s', animal), 'FontSize', 20, 'FontWeight', 'bold');
-    xlim([0, length(mean_activity)+1]);
-
-    % Improve visibility and aesthetics
+    
+    ylabel('Normalized Activity');
+    title(sprintf('Activity Under Different Lighting Conditions - %s', animalName));
+    xlim([0, plot_offset + 1]);
     grid on;
-    legend(h, validConditions, 'Location', 'Best', 'FontSize', 12);
-    hold off;
+    
+    % Create a legend
+    legend(legend_handles, validConditions, 'Location', 'Best');
 
     % Save the figure
-    saveas(gcf, fullfile(output_directory, sprintf('%s--ActivityOverTime.png', animal)));
+    save_filename = sprintf('%s--ActivityOverTime.png', animalName);
+    saveas(gcf, fullfile(save_directory, save_filename));
+    hold off;
+end
+
+% Define colors for conditions
+colors = {'b', 'r', 'k', 'g'};
+
+% Plot and save data for each individual animal
+animalKeys = keys(individualData);
+for k = 1:length(animalKeys)
+    animalName = animalKeys{k};
+    animalData = individualData(animalName);
+    plot_individual_data(animalName, animalData, conditions, colors, save_directory, validConditions);
 end

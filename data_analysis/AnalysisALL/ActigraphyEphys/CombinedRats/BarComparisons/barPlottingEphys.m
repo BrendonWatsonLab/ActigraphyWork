@@ -41,6 +41,7 @@ function plotAllAnimals(data, conditionOrder, save_directory, includeStats, vali
         uniqueDays = unique(thisConditionData.RelativeDay);
         numUniqueDays = length(uniqueDays);
         
+        % Determine first 4 days or all days if < 8, and last 4 days
         if numUniqueDays < 8
             selectedDaysFirst = uniqueDays;
             selectedDaysLast = uniqueDays;
@@ -59,23 +60,29 @@ function plotAllAnimals(data, conditionOrder, save_directory, includeStats, vali
                                  'GroupingVariables', 'RelativeDay').mean_NormalizedActivity) ...
                       / sqrt(height(varfun(@mean, firstSegment, 'InputVariables', 'NormalizedActivity', ...
                                            'GroupingVariables', 'RelativeDay')));
-        if ~includeStats % Only add the first 4 days if we are not focusing on stats
+        if ~includeStats % Only add the first or all days if we are not focusing on stats
             means(end+1) = meanFirst;
             stderr(end+1) = stderrFirst;
             labels{end+1} = currentLabelFirst;
         end
         
-        % Compute statistics for the last segment
-        lastSegment = thisConditionData(ismember(thisConditionData.RelativeDay, selectedDaysLast), :);
-        meanLast = mean(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
-                               'GroupingVariables', 'RelativeDay').mean_NormalizedActivity);
-        stderrLast = std(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
-                                'GroupingVariables', 'RelativeDay').mean_NormalizedActivity) ...
-                     / sqrt(height(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
-                                          'GroupingVariables', 'RelativeDay')));
-        means(end+1) = meanLast;
-        stderr(end+1) = stderrLast;
-        labels{end+1} = [char(validCondition), ' (Last 4 days)'];
+        % Compute statistics for the last segment (or use all days if < 8)
+        if numUniqueDays >= 8 || includeStats
+            lastSegment = thisConditionData(ismember(thisConditionData.RelativeDay, selectedDaysLast), :);
+            meanLast = mean(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
+                                   'GroupingVariables', 'RelativeDay').mean_NormalizedActivity);
+            stderrLast = std(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
+                                    'GroupingVariables', 'RelativeDay').mean_NormalizedActivity) ...
+                         / sqrt(height(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
+                                              'GroupingVariables', 'RelativeDay')));
+            means(end+1) = meanLast;
+            stderr(end+1) = stderrLast;
+            if numUniqueDays < 8
+                labels{end+1} = [char(validCondition), ' (All days)'];
+            else
+                labels{end+1} = [char(validCondition), ' (Last 4 days)'];
+            end
+        end
         
         if includeStats
             lastDataSegments(char(condition)) = lastSegment.NormalizedActivity;
@@ -134,6 +141,8 @@ function plotAllAnimals(data, conditionOrder, save_directory, includeStats, vali
 end
 
 % Example call without stats
+conditionOrder = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
+validConditionOrder = {'300Lux', '1000Lux1', '1000Lux4', 'sleepDeprivation'};
 plotAllAnimals(data, conditionOrder, save_directory, false, validConditionOrder);
 
 % Example call with stats

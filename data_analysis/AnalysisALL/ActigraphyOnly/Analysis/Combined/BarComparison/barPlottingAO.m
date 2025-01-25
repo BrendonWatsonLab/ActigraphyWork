@@ -32,7 +32,7 @@ function plotByGender(data, animals, gender, conditionOrder, save_directory, inc
     stderr = [];
     labels = {};
 
-    % Dictionary to keep last segments for comparison
+    % Dictionary to keep last segments for comparison if stats are included
     lastDataSegments = containers.Map('KeyType', 'char', 'ValueType', 'any');
     
     for condIdx = 1:length(conditionOrder)
@@ -42,7 +42,7 @@ function plotByGender(data, animals, gender, conditionOrder, save_directory, inc
         uniqueDays = unique(thisConditionData.RelativeDay);
         numUniqueDays = length(uniqueDays);
         
-        % First 7 days or all days if less than 14
+        % Determine first 7 days or all days if < 14, and last 7 days
         if numUniqueDays < 14
             selectedDaysFirst = uniqueDays;
             selectedDaysLast = uniqueDays;
@@ -61,23 +61,29 @@ function plotByGender(data, animals, gender, conditionOrder, save_directory, inc
                                  'GroupingVariables', 'RelativeDay').mean_NormalizedActivity) ...
                       / sqrt(height(varfun(@mean, firstSegment, 'InputVariables', 'NormalizedActivity', ...
                                            'GroupingVariables', 'RelativeDay')));
-        if ~includeStats % Only add the first 7 days if we are not focusing on stats
+        if ~includeStats % Only plot first and/or all days if we are not focusing on stats
             means(end+1) = meanFirst;
             stderr(end+1) = stderrFirst;
             labels{end+1} = currentLabelFirst;
         end
         
-        % Compute statistics for the last segment
-        lastSegment = thisConditionData(ismember(thisConditionData.RelativeDay, selectedDaysLast), :);
-        meanLast = mean(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
-                               'GroupingVariables', 'RelativeDay').mean_NormalizedActivity);
-        stderrLast = std(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
-                                'GroupingVariables', 'RelativeDay').mean_NormalizedActivity) ...
-                     / sqrt(height(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
-                                          'GroupingVariables', 'RelativeDay')));
-        means(end+1) = meanLast;
-        stderr(end+1) = stderrLast;
-        labels{end+1} = [char(condition), ' (Last 7 days)'];
+        % Compute statistics for the last segment (or use all days if < 14)
+        if numUniqueDays >= 14 || includeStats
+            lastSegment = thisConditionData(ismember(thisConditionData.RelativeDay, selectedDaysLast), :);
+            meanLast = mean(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
+                                   'GroupingVariables', 'RelativeDay').mean_NormalizedActivity);
+            stderrLast = std(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
+                                    'GroupingVariables', 'RelativeDay').mean_NormalizedActivity) ...
+                         / sqrt(height(varfun(@mean, lastSegment, 'InputVariables', 'NormalizedActivity', ...
+                                              'GroupingVariables', 'RelativeDay')));
+            means(end+1) = meanLast;
+            stderr(end+1) = stderrLast;
+            if numUniqueDays < 14
+                labels{end+1} = [char(condition), ' (All days)'];
+            else
+                labels{end+1} = [char(condition), ' (Last 7 days)'];
+            end
+        end
         
         if includeStats
             lastDataSegments(char(condition)) = lastSegment.NormalizedActivity;
@@ -107,7 +113,7 @@ function plotByGender(data, animals, gender, conditionOrder, save_directory, inc
     if includeStats
         sigPairs = {};
         pValues = [];
-        conditionKeys = keys(lastDataSegments); % Rename the variable to avoid conflict
+        conditionKeys = keys(lastDataSegments);
         for i = 1:length(conditionKeys)
             for j = i+1:length(conditionKeys)
                 cond1 = conditionKeys{i};
