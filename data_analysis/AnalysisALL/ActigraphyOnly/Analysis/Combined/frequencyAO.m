@@ -17,7 +17,7 @@ data.Animal = categorical(data.Animal);
 % Convert 'RelativeDay' to categorical
 data.RelativeDay = categorical(data.RelativeDay);
 
-function fftAnalysis5minAndHourlyBinsByGender(data, conditionOrder, save_directory)
+function fftAnalysisAOWithSubplots(data, conditionOrder, save_directory)
     % Convert DateZT to datetime if not already
     if ~isdatetime(data.DateZT)
         data.DateZT = datetime(data.DateZT);
@@ -35,64 +35,73 @@ function fftAnalysis5minAndHourlyBinsByGender(data, conditionOrder, save_directo
         animalGroup = animalGroups{genderIdx};
         gender = genders{genderIdx};
         
-        % Select data for this gender
-        selectedData = data(ismember(data.Animal, animalGroup) & ismember(data.Condition, conditionOrder), :);
+        % Analyze for each condition
+        for condIdx = 1:length(conditionOrder)
+            condition = conditionOrder{condIdx};
 
-        % === 5-Minute Bins Analysis (Cycles per Hour) ===
-        % Create a new column for 5-minute bin identification
-        selectedData.FiveMinBin = selectedData.DateZT.Hour * 12 + floor(selectedData.DateZT.Minute / 5) + 1;
+            % Select data for this gender and condition
+            selectedData = data(ismember(data.Animal, animalGroup) & ...
+                                data.Condition == condition, :);
 
-        % Calculate mean NormalizedActivity for each 5-minute bin
-        binMeans5min = varfun(@mean, selectedData, 'InputVariables', 'NormalizedActivity', ...
-                              'GroupingVariables', 'FiveMinBin');
-        
-        % Remove any NaNs or incomplete bins entries
-        binMeans5min = rmmissing(binMeans5min);
+            % Prepare figure for subplots
+            figure;
 
-        % Apply FFT to 5-minute bins
-        N5 = length(binMeans5min.mean_NormalizedActivity);
-        fftVals5 = fft(binMeans5min.mean_NormalizedActivity);
-        f5 = (0:N5-1)*(12/N5); % Frequency for cycles per hour (12 * 5-minute bins per hour)
-        power5 = abs(fftVals5).^2/N5;
+            % === 5-Minute Bins Analysis (Cycles per Hour) ===
+            % Create a new column for 5-minute bin identification
+            selectedData.FiveMinBin = selectedData.DateZT.Hour * 12 + floor(selectedData.DateZT.Minute / 5) + 1;
 
-        % Plot 5-minute bin results
-        figure;
-        plot(f5, power5);
-        xlabel('Frequency (cycles per hour)');
-        ylabel('Power');
-        title([gender, ' - FFT Power Spectrum for 5-Minute Bins']);
-        xlim([0 1]); % Display relevant frequency range
-        save_filename_5min = sprintf('%s--FFT5MinBinsPowerSpectrum_Hour.png', gender);
-        saveas(gcf, fullfile(save_directory, save_filename_5min));
+            % Calculate mean NormalizedActivity for each 5-minute bin
+            binMeans5min = varfun(@mean, selectedData, 'InputVariables', 'NormalizedActivity', ...
+                                  'GroupingVariables', 'FiveMinBin');
+            
+            % Remove any NaNs or incomplete bins entries
+            binMeans5min = rmmissing(binMeans5min);
 
-        % === Hourly Bins Analysis ===
-        % Create a new column for hourly bin identification
-        selectedData.HourBin = selectedData.DateZT.Hour + 1;
+            % Apply FFT to 5-minute bins
+            N5 = length(binMeans5min.mean_NormalizedActivity);
+            fftVals5 = fft(binMeans5min.mean_NormalizedActivity);
+            f5 = (0:N5-1)*(12/N5); % Frequency for cycles per hour
+            power5 = abs(fftVals5).^2/N5;
 
-        % Calculate mean NormalizedActivity for each hourly bin
-        binMeansHourly = varfun(@mean, selectedData, 'InputVariables', 'NormalizedActivity', ...
-                                'GroupingVariables', 'HourBin');
-        
-        % Remove any NaNs or incomplete bins entries
-        binMeansHourly = rmmissing(binMeansHourly);
+            % Subplot 1: 5-minute bin results
+            subplot(2, 1, 1); % 2 rows, 1 column, 1st subplot
+            plot(f5, power5);
+            xlabel('Frequency (cycles per hour)');
+            ylabel('Power');
+            title([gender, ' - ', condition, ' - FFT Power Spectrum for 5-Minute Bins']);
+            xlim([0 1]); % Display relevant frequency range
 
-        % Apply FFT to hourly bins
-        N1 = length(binMeansHourly.mean_NormalizedActivity);
-        fftVals1 = fft(binMeansHourly.mean_NormalizedActivity);
-        f1 = (0:N1-1)*(1/24); % Frequency for cycles per day
-        power1 = abs(fftVals1).^2/N1;
+            % === Hourly Bins Analysis ===
+            % Create a new column for hourly bin identification
+            selectedData.HourBin = selectedData.DateZT.Hour + 1;
 
-        % Plot hourly bin results
-        figure;
-        plot(f1, power1);
-        xlabel('Frequency (cycles per day)');
-        ylabel('Power');
-        title([gender, ' - FFT Power Spectrum for Hourly Bins']);
-        xlim([0 1]);
-        save_filename_hourly = sprintf('%s--FFTHourlyBinsPowerSpectrum.png', gender);
-        saveas(gcf, fullfile(save_directory, save_filename_hourly));
+            % Calculate mean NormalizedActivity for each hourly bin
+            binMeansHourly = varfun(@mean, selectedData, 'InputVariables', 'NormalizedActivity', ...
+                                    'GroupingVariables', 'HourBin');
+            
+            % Remove any NaNs or incomplete bins entries
+            binMeansHourly = rmmissing(binMeansHourly);
+
+            % Apply FFT to hourly bins
+            N1 = length(binMeansHourly.mean_NormalizedActivity);
+            fftVals1 = fft(binMeansHourly.mean_NormalizedActivity);
+            f1 = (0:N1-1)*(1/24); % Frequency for cycles per day
+            power1 = abs(fftVals1).^2/N1;
+
+            % Subplot 2: Hourly bin results
+            subplot(2, 1, 2); % 2 rows, 1 column, 2nd subplot
+            plot(f1, power1);
+            xlabel('Frequency (cycles per day)');
+            ylabel('Power');
+            title([gender, ' - ', condition, ' - FFT Power Spectrum for Hourly Bins']);
+            xlim([0 1]);
+
+            % Save the figure
+            save_filename_all = sprintf('%s_%s--FFTPowerSpectrum.png', gender, condition);
+            saveas(gcf, fullfile(save_directory, save_filename_all));
+        end
     end
 end
 
 % Example call to the function
-fftAnalysis5minAndHourlyBinsByGender(data, conditionOrder, save_directory);
+fftAnalysisAOWithSubplots(data, conditionOrder, save_directory);

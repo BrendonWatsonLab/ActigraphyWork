@@ -1,5 +1,5 @@
 % Load data
-data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv');
+data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyEphys/EphysActivityData.csv');
 save_directory = '/Users/noahmuscat/Desktop';
 
 % Ensure 'RelativeDay' is numeric and integer
@@ -8,35 +8,37 @@ if ~isnumeric(data.RelativeDay)
 end
 data.RelativeDay = floor(data.RelativeDay);
 
-conditionOrder = {'300Lux', '1000Lux', 'FullDark', '300LuxEnd'};
+conditionOrder = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
+validConditionOrderEphys = {'300Lux', '1000Lux1', '1000Lux4', 'sleepDeprivation'};
 
 % Convert 'Condition' and 'Animal' into categorical variables
-data.Condition = categorical(data.Condition, conditionOrder, 'Ordinal', true);
+data.Condition = categorical(data.Condition, conditionOrderEphys, 'Ordinal', true);
 data.Animal = categorical(data.Animal);
 
 % Convert 'RelativeDay' to categorical
 data.RelativeDay = categorical(data.RelativeDay);
 
-function fftAnalysis5minAndHourlyBinsByGender(data, conditionOrder, save_directory)
+function fftAnalysisEphysWithSubplots(data, conditionOrder, save_directory, validConditionOrderEphys)
     % Convert DateZT to datetime if not already
     if ~isdatetime(data.DateZT)
         data.DateZT = datetime(data.DateZT);
     end
 
-    % Define male and female animals
-    maleAnimals = {'AO1', 'AO2', 'AO3', 'AO7'};
-    femaleAnimals = {'AO4', 'AO5', 'AO6', 'AO8'};
+    % Ensure all needed conditions are present in categories
+    if ~all(ismember(conditionOrder, categories(data.Condition)))
+        data.Condition = addcats(data.Condition, conditionOrder);
+    end
 
-    % Plot separately for males and females
-    genders = {'Males', 'Females'};
-    animalGroups = {maleAnimals, femaleAnimals};
+    % Analyze for the given set of conditions
+    for condIdx = 1:length(conditionOrder)
+        condition = conditionOrder{condIdx};
+        validCondition = validConditionOrderEphys{condIdx};
 
-    for genderIdx = 1:length(genders)
-        animalGroup = animalGroups{genderIdx};
-        gender = genders{genderIdx};
-        
-        % Select data for this gender
-        selectedData = data(ismember(data.Animal, animalGroup) & ismember(data.Condition, conditionOrder), :);
+        % Select data for this condition
+        selectedData = data(data.Condition == condition, :);
+
+        % Prepare figure for subplots
+        figure;
 
         % === 5-Minute Bins Analysis (Cycles per Hour) ===
         % Create a new column for 5-minute bin identification
@@ -52,18 +54,16 @@ function fftAnalysis5minAndHourlyBinsByGender(data, conditionOrder, save_directo
         % Apply FFT to 5-minute bins
         N5 = length(binMeans5min.mean_NormalizedActivity);
         fftVals5 = fft(binMeans5min.mean_NormalizedActivity);
-        f5 = (0:N5-1)*(12/N5); % Frequency for cycles per hour (12 * 5-minute bins per hour)
+        f5 = (0:N5-1)*(12/N5); % Frequency for cycles per hour
         power5 = abs(fftVals5).^2/N5;
 
-        % Plot 5-minute bin results
-        figure;
+        % Subplot 1: 5-minute bin results
+        subplot(2, 1, 1); % 2 rows, 1 column, 1st subplot
         plot(f5, power5);
         xlabel('Frequency (cycles per hour)');
         ylabel('Power');
-        title([gender, ' - FFT Power Spectrum for 5-Minute Bins']);
+        title([validCondition, ' - FFT Power Spectrum for 5-Minute Bins']);
         xlim([0 1]); % Display relevant frequency range
-        save_filename_5min = sprintf('%s--FFT5MinBinsPowerSpectrum_Hour.png', gender);
-        saveas(gcf, fullfile(save_directory, save_filename_5min));
 
         % === Hourly Bins Analysis ===
         % Create a new column for hourly bin identification
@@ -82,17 +82,19 @@ function fftAnalysis5minAndHourlyBinsByGender(data, conditionOrder, save_directo
         f1 = (0:N1-1)*(1/24); % Frequency for cycles per day
         power1 = abs(fftVals1).^2/N1;
 
-        % Plot hourly bin results
-        figure;
+        % Subplot 2: Hourly bin results
+        subplot(2, 1, 2); % 2 rows, 1 column, 2nd subplot
         plot(f1, power1);
         xlabel('Frequency (cycles per day)');
         ylabel('Power');
-        title([gender, ' - FFT Power Spectrum for Hourly Bins']);
+        title([validCondition, ' - FFT Power Spectrum for Hourly Bins']);
         xlim([0 1]);
-        save_filename_hourly = sprintf('%s--FFTHourlyBinsPowerSpectrum.png', gender);
-        saveas(gcf, fullfile(save_directory, save_filename_hourly));
+
+        % Save the figure
+        save_filename_all = sprintf('%s--FFTPowerSpectrum.png', validCondition);
+        saveas(gcf, fullfile(save_directory, save_filename_all));
     end
 end
 
 % Example call to the function
-fftAnalysis5minAndHourlyBinsByGender(data, conditionOrder, save_directory);
+fftAnalysisEphysWithSubplots(data, conditionOrderEphys, save_directory, validConditionOrderEphys);
