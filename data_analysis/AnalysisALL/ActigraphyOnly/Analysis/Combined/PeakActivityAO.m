@@ -17,7 +17,7 @@ data.Animal = categorical(data.Animal);
 % Convert 'RelativeDay' to categorical
 data.RelativeDay = categorical(data.RelativeDay);
 
-function plotZTActivity48HoursByGender(data, conditionOrder, save_directory, validConditionOrder)
+function plotZTActivity48HoursByGender(data, conditionOrder, save_directory)
     % Convert 'ZT_Time' to categorical if not already
     if ~iscategorical(data.ZT_Time)
         data.ZT_Time = categorical(data.ZT_Time, 0:23, 'Ordinal', true);
@@ -41,7 +41,6 @@ function plotZTActivity48HoursByGender(data, conditionOrder, save_directory, val
         
         for condIdx = 1:length(conditionOrder)
             condition = conditionOrder{condIdx};
-            validCondition = validConditionOrder{condIdx};
             
             % Filter the data for this specific condition and gender
             thisConditionData = data(data.Condition == condition & ismember(data.Animal, animalGroup), :);
@@ -90,13 +89,13 @@ function plotZTActivity48HoursByGender(data, conditionOrder, save_directory, val
             
             xlabel('ZT Hour');
             ylabel('Normalized Activity', 'FontSize', 8);
-            title([gender, ' - Activity Over 48 Hours - ', char(validCondition)]);
+            title([gender, ' - Activity Over 48 Hours - ', char(condition)]);
             xticks(0:6:48);
             xlim([-0.5, 47.5]); % Ensure all 48 hours are visible
             grid on;
 
             % Force the y-axis to auto-scale to fit all plot elements
-            ylim([-1 1.5]);
+            ylim([-1 2]);
             
             % Retrieve y-axis limits after plotting and auto-scaling
             yLimit = ylim;
@@ -116,4 +115,4 @@ function plotZTActivity48HoursByGender(data, conditionOrder, save_directory, val
 end
 
 % Example call to the function
-plotZTActivity48HoursByGender(data, conditionOrder, save_directory, validConditionOrder);
+plotZTActivity48HoursByGender(data, conditionOrder, save_directory);
