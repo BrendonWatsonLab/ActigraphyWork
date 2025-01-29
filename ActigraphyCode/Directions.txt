@@ -1,0 +1,41 @@
+Guide to this folder:
+
+Which file to use
+	Use actigraphy_v5.py IF you want GUI
+	Use actigraphy_v5t.py IF you want old GUI (not advised)
+	Use actigraphy_v5RAW.py IF you want to run on Great Lakes
+	Use dilation_v4.py if you want to tune the parameters
+	Ignore others TBH
+
+If using v5RAW, the comments at the top of the script show how to run the script through the command line
+
+The venv folder here is an environment (MacOS) for the python files to run on. To activate venv:
+	1) cd to directory with the .py file
+	2) source venv/bin/activate
+This should work on linux, etc too
+
+Required libraries to install at start if needed:
+	opencv-python (for v5 and v5RAW)
+	pyqt5 (for v5)
+	tkinter (for v5t, not recommended)
+
+GUI Directions: 
+	1) select video file OR video folder (folder that directly contains .mp4 files)
+	2) input the 4 parameters (tune separately) or use prior tuning
+	3) input the desired output directory (where the .csv files will go)
+	4) press start button and wait to finish (yay)
+
+GreatLakes Directions:
+	1) Go to Great Lakes, start a job, get to the command line
+	2) run the line in python including the video folder, output directory, —oaf, and —name_stamp (again, directions are at the top of v5RAW)
+	3) wait to finish (yay) 
+
+Any other questions: 
+	noahmu@umich.edu
+	
+	
+
+
+
+
+
