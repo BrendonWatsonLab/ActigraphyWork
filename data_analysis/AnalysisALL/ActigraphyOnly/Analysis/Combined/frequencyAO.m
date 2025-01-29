@@ -103,5 +103,4 @@ function fftAnalysisAOWithSubplots(data, conditionOrder, save_directory)
     end
 end
 
-% Example call to the function
 fftAnalysisAOWithSubplots(data, conditionOrder, save_directory);

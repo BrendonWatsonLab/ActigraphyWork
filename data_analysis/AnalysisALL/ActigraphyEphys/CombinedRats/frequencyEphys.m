@@ -12,7 +12,7 @@ conditionOrder = {'300Lux', '1000Lux1', '1000Lux4', 'sleep_deprivation'};
 validConditionOrderEphys = {'300Lux', '1000Lux1', '1000Lux4', 'sleepDeprivation'};
 
 % Convert 'Condition' and 'Animal' into categorical variables
-data.Condition = categorical(data.Condition, conditionOrderEphys, 'Ordinal', true);
+data.Condition = categorical(data.Condition, conditionOrder, 'Ordinal', true);
 data.Animal = categorical(data.Animal);
 
 % Convert 'RelativeDay' to categorical
@@ -22,11 +22,6 @@ function fftAnalysisEphysWithSubplots(data, conditionOrder, save_directory, vali
     % Convert DateZT to datetime if not already
     if ~isdatetime(data.DateZT)
         data.DateZT = datetime(data.DateZT);
-    end
-
-    % Ensure all needed conditions are present in categories
-    if ~all(ismember(conditionOrder, categories(data.Condition)))
-        data.Condition = addcats(data.Condition, conditionOrder);
     end
 
     % Analyze for the given set of conditions
@@ -96,5 +91,4 @@ function fftAnalysisEphysWithSubplots(data, conditionOrder, save_directory, vali
     end
 end
 
-% Example call to the function
-fftAnalysisEphysWithSubplots(data, conditionOrderEphys, save_directory, validConditionOrderEphys);
+fftAnalysisEphysWithSubplots(data, conditionOrder, save_directory, validConditionOrderEphys);
