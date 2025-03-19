@@ -317,7 +317,7 @@ class ActigraphyProcessor:
         result_rows = []
         with open(output_file_path, 'w', newline='') as output_file:
             writer = csv.writer(output_file)
-            writer.writerow(['Frame', 'TimeElapsedMicros', 'RawDifference', 'RMSE','SelectedPixelDifference', 'PositTime'])
+            writer.writerow(['Frame', 'TimeElapsedMicros', 'RawDifference', 'RMSE','SelectedPixelDifference', 'POSIX'])
 
             if set_roi and self.roi_pts is None:
                 # If set_roi is True and roi_pts is not provided, prompt the user to select ROI
