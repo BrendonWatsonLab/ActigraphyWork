@@ -15,7 +15,7 @@
 %% Reading in Data
 % Reading in data that is already in ZT (Zeitgeber Time) form
 convertZT = false; % No need to convert to ZT as data is already in ZT form
-combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/JeremyAnalysis/ActigraphyOnly/AOCohortData.csv');
+combined_data = readtable('/Users/noahmuscat/University of Michigan Dropbox/Noah Muscat/ActivityAnalysis/ActigraphyOnly/AOActivityData.csv');
 
 %% Wrangling hourly bins and plotting bar graphs
 % Analyze circadian running using a custom function

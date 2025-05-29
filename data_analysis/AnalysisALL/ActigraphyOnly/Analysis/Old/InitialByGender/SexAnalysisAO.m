@@ -164,12 +164,12 @@ disp('48-hour z-score activity analysis and plots generated.');
 %% Circadian Analysis AO
 % Pool data by gender and plot means at each hour of the day
 combined_data.Hour = hour(combined_data.DateZT);
-hourlyMeanMale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Male'), :), 'Hour', 'mean', 'SelectedPixelDifference');
-hourlyMeanFemale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Female'), :), 'Hour', 'mean', 'SelectedPixelDifference');
+hourlyMeanMale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Male'), :), 'Hour', 'mean', 'NormalizedActivity');
+hourlyMeanFemale = groupsummary(combined_data(strcmp(combined_data.Gender, 'Female'), :), 'Hour', 'mean', 'NormalizedActivity');
 
 hours48 = [hourlyMeanMale.Hour; hourlyMeanMale.Hour + 24];
-meansMale48 = [hourlyMeanMale.mean_SelectedPixelDifference; hourlyMeanMale.mean_SelectedPixelDifference];
-meansFemale48 = [hourlyMeanFemale.mean_SelectedPixelDifference; hourlyMeanFemale.mean_SelectedPixelDifference];
+meansMale48 = [hourlyMeanMale.mean_NormalizedActivity; hourlyMeanMale.mean_NormalizedActivity];
+meansFemale48 = [hourlyMeanFemale.mean_NormalizedActivity; hourlyMeanFemale.mean_NormalizedActivity];
 
 figure;
 hold on;
