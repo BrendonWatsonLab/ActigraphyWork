@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QScrollArea
 import numpy as np
 import argparse
 import os
-os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
+# os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH") # FINALLY FIXED 'xcb' plugin error, only works on Scatha
 # need to comment out above line of code for macOS
 import re
 import datetime
@@ -419,10 +419,12 @@ class ActigraphyProcessor:
         total_time_taken = end_time - start_time
         time_per_frame = total_time_taken / total_frames_processed if total_frames_processed else float('inf')
 
-        # Print the cumulative results
-        print("Total Time Taken for All Videos: {:.2f} seconds".format(total_time_taken))
-        print("Total Frames Processed for All Videos: {}".format(total_frames_processed))
-        print("Average Time Per Frame for All Videos: {:.4f} seconds".format(time_per_frame))
+        print("\n--- FOLDER PROCESSING SUMMARY ---")
+        print(f"Total Videos Processed: {files_processed}")
+        print(f"Total Time Taken for All Videos: {total_time_taken:.2f} seconds")
+        print(f"Total Frames Processed for All Videos: {total_frames_processed}")
+        print(f"Average Time Per Frame for All Videos: {time_per_frame:.4f} seconds")
+        print("-" * 30)
         
         # Emit the final signal when done
         if progress_callback:
