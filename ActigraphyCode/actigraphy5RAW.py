@@ -198,18 +198,19 @@ class ActigraphyProcessor:
 
     @staticmethod
     def _get_creation_time_from_name(filename):
-        # Updated regex pattern and datetime format
-        regex_pattern = r'(\d{8}_\d{6})'
+        # This regex is specifically designed to find "YYYYMMDD_HH-MM-SS"
+        regex_pattern = r'(\d{8}_\d{2}-\d{2}-\d{2})' # <-- CHANGED
         match = re.search(regex_pattern, os.path.basename(filename))
         
         if match:
             date_time_str = match.group(1)
-            date_time_format = '%Y%m%d_%H%M%S'
+            # The format string now includes dashes to match the new regex
+            date_time_format = '%Y%m%d_%H-%M-%S' # <-- CHANGED
             date_time_obj = datetime.strptime(date_time_str, date_time_format)
             posix_timestamp_ms = int(date_time_obj.timestamp() * 1000)
             return posix_timestamp_ms
         else:
-            print(f"Failed to extract creation time from the file name. Using file generated time instead.")
+            print(f"Failed to extract creation time from the file name: {os.path.basename(filename)}. Using file generated time instead.")
             return int(os.path.getctime(filename) * 1000)
 
 
